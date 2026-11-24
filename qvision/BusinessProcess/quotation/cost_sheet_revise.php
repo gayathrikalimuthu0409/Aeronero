@@ -14,6 +14,32 @@ $stmt = $con->prepare("SELECT a.id as costsheet_id,a.*,b.*,e.*,f.*,g.*,b.org_nam
 
 $stmt->execute(); 
 $row = $stmt->fetch();
+
+// If one of the linked records (client / staff / user) is missing, the strict query above finds nothing and the
+// whole page opens empty (no item rows, so SAVE has no cost sheet number). Load the cost sheet anyway.
+if (!$row) {
+	$stmt = $con->prepare("SELECT a.id as costsheet_id,a.*,b.*,e.*,f.*,g.*,b.org_name as company_name from cost_sheet_entry a 
+		 left join new_client_master b on(b.id=a.client_id) 
+		 left join product_services f on (f.id = a.business_id)
+		 left join staff_master e ON e.candid_id=a.candid_id
+		 left join z_user_master g ON (g.candidate_id = e.id)
+		 where a.id='$costsheet_id' and a.status ='1' ");
+	$stmt->execute();
+	$row = $stmt->fetch();
+	if ($row) {
+		// the cost sheet's own values must win over empty values from the missing linked records
+		$own = $con->query("SELECT * FROM cost_sheet_entry WHERE id='$costsheet_id'")->fetch(PDO::FETCH_ASSOC);
+		if ($own) {
+			foreach ($own as $k => $v) { if ($k !== 'id') { $row[$k] = $v; } }
+		}
+		if (empty($row['mapping_id'])) { $row['mapping_id'] = $row['business_id']; }
+	}
+}
+// the enquiry link must come from the cost sheet itself (the client table also has an "enquiry_id" column)
+if ($row) {
+	$own_enq = $con->query("SELECT enquiry_id FROM cost_sheet_entry WHERE id='$costsheet_id'")->fetch(PDO::FETCH_ASSOC);
+	if ($own_enq && !empty($own_enq['enquiry_id'])) { $row['enquiry_id'] = $own_enq['enquiry_id']; }
+}
  // echo $row['Product'];
 
 if($row['business_id'] =='1'){
@@ -152,8 +178,8 @@ $row['emp_name'];
 		</tr>
 		<?php  
 		 $query= $con->query("SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
-				 inner join new_client_master b on(b.id=a.client_id) 
-				 inner join staff_master e ON e.candid_id=a.candid_id
+				 left join new_client_master b on(b.id=a.client_id) 
+				 left join staff_master e ON e.candid_id=a.candid_id
 				 where a.status ='1' and a.cost_sheet_no='$cost_sheet_no' order by a.id desc"); 
 		    /*  echo "SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
 				 inner join client_master b on(b.id=a.client_id) 
@@ -261,8 +287,8 @@ $row['emp_name'];
 			</tr>
 		</table-->
 		<?php  $query1= $con->query("SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
-				 inner join new_client_master b on(b.id=a.client_id) 
-				 inner join staff_master e ON e.candid_id=a.candid_id
+				 left join new_client_master b on(b.id=a.client_id) 
+				 left join staff_master e ON e.candid_id=a.candid_id
 				 where a.status ='1' and a.cost_sheet_no='$cost_sheet_no' order by a.id desc"); 
 				 $query1->execute(); 
                  $row1 = $query1->fetch();
@@ -431,7 +457,7 @@ $row['emp_name'];
 			
 	  </div>-->
 	 <div class="form-group col-sm-12">
-		<input type="button" style="float:right !important;" class="btn btn-success" id="save" name="save" onclick="costsheet_insert()"  value="Save">
+		<input type="button" style="float:right !important;" class="btn btn-success" id="save" name="save" onclick="if (typeof costsheet_insert !== 'function') { alert('Page script did not load. Press Ctrl+F5 and open the cost sheet again.'); return false; } costsheet_insert();"  value="Save">
 	</div>
 	</div>
 	</form>	  
@@ -546,46 +572,63 @@ $("#quote_type").change(function(e){
 
 function costsheet_insert()
 {
-	var field=1;
-	var form = $('form')[0];
-	var formData = new FormData(form);
-	formData.set('field', field);
-	formData.set('enquiry_id', document.getElementById("enquiry_id").value);
-	formData.set('chost_date', document.getElementById("rev_cost_date").value);
-	formData.set('quote_type', document.getElementById("quote_type").value);
-	formData.set('mapping_id', document.getElementById("mapping_id").value);
-	formData.set('candid_id', document.getElementById("candid_id").value);
-	formData.set('client_id', document.getElementById("client_id").value);
-	
-    var safe_cost_sheet_no = document.getElementById("cost_sheet_no").value;
-	formData.set('cost_sheet_no', safe_cost_sheet_no);
-    
-	$('.wage_content').html('<br><div style="text-align: center;"><img src="qvision/images/images/load3.gif"></div>');
-    
-	$.ajax({
-		type:'POST',
-		data: formData,
-		processData: false,
-		contentType: false,
-		url:'qvision/BusinessProcess/quotation/costsheet_revise_insert.php',
-		success:function(data)
-		{ 
-            // Only show success if PHP actually inserted the data
-            if(data.trim() === "Success") {
-			    revisecost_sheet_mail(safe_cost_sheet_no);
-			    alert("Cost Sheet Updated Successfully");
-		        Cost_sheet_revise();
-            } else {
-                // If SQL fails, show the exact error message from PHP
-                alert("Database Error: " + data);
-                $('.wage_content').html('<b style="color:red;">Error inserting data. Please check logic!</b>');
-            }
-		},
-		error: function(xhr, status, error) {
-			alert("AJAX Error: " + error + " / " + xhr.responseText);
-			$('.wage_content').html('Error occurred.');
+	var $saveBtn = $('#save');
+	if ($saveBtn.data('saving')) { return; }          // already saving - ignore double click
+
+	try {
+		if (!document.getElementById("cost_sheet_no")) {
+			alert("This cost sheet could not be loaded on the page (no item rows were found for it).\nPlease go back, open it again and try Save.");
+			return;
 		}
-	});
+		var form = document.querySelector('.wage_content form') || $('form')[0];
+		var formData = new FormData(form);
+		formData.set('field', 1);
+		formData.set('enquiry_id', document.getElementById("enquiry_id").value);
+		formData.set('chost_date', document.getElementById("rev_cost_date").value);
+		formData.set('quote_type', document.getElementById("quote_type").value);
+		formData.set('mapping_id', document.getElementById("mapping_id").value);
+		formData.set('candid_id', document.getElementById("candid_id").value);
+		formData.set('client_id', document.getElementById("client_id").value);
+
+		var safe_cost_sheet_no = document.getElementById("cost_sheet_no").value;
+		formData.set('cost_sheet_no', safe_cost_sheet_no);
+
+		// NOTE: the form is kept on screen while saving, so nothing is lost if the server reports an error.
+		$saveBtn.data('saving', true);
+
+		$.ajax({
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			timeout: 120000,
+			url: 'qvision/BusinessProcess/quotation/costsheet_revise_insert.php',
+			success: function(data)
+			{
+				$saveBtn.data('saving', false);
+				data = String(data).trim();
+				if (data === "Success") {
+					revisecost_sheet_mail(safe_cost_sheet_no);
+					alert("Cost Sheet Updated Successfully");
+					Cost_sheet_revise();
+				} else {
+					console.error('Cost sheet revise - server said:', data);
+					alert("Cost sheet could not be saved.\n" + data.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 600));
+				}
+			},
+			error: function(xhr, status, error)
+			{
+				$saveBtn.data('saving', false);
+				console.error('Cost sheet revise - AJAX error', status, xhr.status, xhr.responseText);
+				alert("Cost sheet could not be saved.\nStatus: " + status + " (" + xhr.status + " " + (error || '') + ")\n" +
+					(xhr.responseText || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 600));
+			}
+		});
+	} catch (e) {
+		$saveBtn.data('saving', false);
+		console.error(e);
+		alert("Save error (page script): " + e.message);
+	}
 }
 
 function revisecost_sheet_mail(cost_sheet_no)
@@ -1198,8 +1241,6 @@ totalIt(); */
   }
 
 </script> --->
-<script>
-
 <script type="text/javascript">
 function showDiv(id){
 	//alert()

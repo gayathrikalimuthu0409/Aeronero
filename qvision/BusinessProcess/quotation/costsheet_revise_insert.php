@@ -1,7 +1,17 @@
-
 <?php
-error_reporting(E_ALL);
+ob_start();                                   // collect any PHP warnings so they cannot break the "Success" reply
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
 ini_set('display_errors', 1);
+/* ===== TEMPORARY DEBUG - remove once saving works ===== */
+register_shutdown_function(function () {
+	$e = error_get_last();
+	if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR])) {
+		$msg = date('Y-m-d H:i:s') . ' PHP ERROR: ' . $e['message'] . ' in ' . basename($e['file']) . ' on line ' . $e['line'] . "\r\n";
+		@file_put_contents(__DIR__ . '/costsheet_error_log.txt', $msg, FILE_APPEND);
+		echo $msg;
+	}
+});
+/* ===== END TEMPORARY DEBUG ===== */
 require '../../../connect.php';
 require '../../../user.php';
 file_put_contents('debug.txt', "Started costsheet_revise_insert.php\n", FILE_APPEND);
@@ -299,18 +309,15 @@ else
 }
 }
 
-if($insert_query)
+$__noise = trim(strip_tags((string) ob_get_clean()));
+if(isset($insert_query) && $insert_query)
 {
    echo "Success";
    file_put_contents('debug.txt', "Success! inserted.\n", FILE_APPEND);
 } else {
-   file_put_contents('debug.txt', "Failed to insert: " . implode(" ", $con->errorInfo()) . "\n", FILE_APPEND);
+   $__why = ($row_count == 0) ? 'No item rows were received from the page. ' : '';
+   $__db  = isset($con) ? implode(' ', (array) $con->errorInfo()) : '';
+   file_put_contents('debug.txt', "Failed to insert: " . $__why . $__db . "\n", FILE_APPEND);
+   echo "Failed to save. " . $__why . $__db . " " . $__noise;
 }
 ?>
-
-
-
-
-
-
-

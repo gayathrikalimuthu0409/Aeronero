@@ -1,4 +1,16 @@
 <?php
+/* ===== TEMPORARY DEBUG - remove this block once saving works ===== */
+ini_set('display_errors', '1');
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
+register_shutdown_function(function () {
+	$e = error_get_last();
+	if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR])) {
+		$msg = date('Y-m-d H:i:s') . ' PHP ERROR: ' . $e['message'] . ' in ' . basename($e['file']) . ' on line ' . $e['line'] . "\r\n";
+		@file_put_contents(__DIR__ . '/costsheet_error_log.txt', $msg, FILE_APPEND);
+		echo $msg;
+	}
+});
+/* ===== END TEMPORARY DEBUG ===== */
 require '../../../connect.php'; 
 require '../../../user.php'; 
 require '../../PHPMailer/PHPMailerAutoload.php';
@@ -729,64 +741,54 @@ echo $mailerID;
 echo $enquiry_idq;
 */
 //$date=$_REQUEST['date'];
-$mail = new PHPMailer;
-$mail->SMTPDebug = 0; 
-$mail->Mailer = "smtp";
-$mail->IsSMTP(true); 
-$mail->Port = 587;
-$mail->Host = 'webmail.quadsel.in';        
-$mail->SMTPAuth = true;                              // Enable SMTP authentication
-$mail->Username = 'hr@quadsel.in';
-$mail->Password = 'Hr@2024#';                         // SMTP password
-$mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
-$mail->SMTPOptions = [
-    'ssl' => [
-        'verify_peer' => false,
-        'verify_peer_name' => false,
-		'allow_self_singed' => true,
-    ]
-];
-$mail->From = 'hr@quadsel.in';		//Sets the From email address for the message
-$mail->FromName = 'Recruitment Job Portal';
-$mail->AddAddress($mailerID, $full_name);		//Adds a "To" address
-// $mail->AddCC('ENTER MAIL ID');         //Adds a "CC" address.
-$mail->WordWrap = 50;                                 // Set word wrap to 50 characters
-$mail->isHTML(true);                                 // Set email format to HTML
+// 1) Mark the enquiry as "cost sheet generated" FIRST, so saving never depends on e-mail.
+$insert_query2= $con->query("Update enquiry set status='4' where id='$enquiry_idq'");
 
+// 2) Notification e-mail is best-effort: a mail/SMTP problem must NOT break or hang the save.
+try {
+	$mail = new PHPMailer(true);
+	$mail->SMTPDebug = 0; 
+	$mail->Mailer = "smtp";
+	$mail->IsSMTP(true); 
+	$mail->Port = 587;
+	$mail->Host = 'webmail.quadsel.in';        
+	$mail->SMTPAuth = true;                              // Enable SMTP authentication
+	$mail->Username = 'hr@quadsel.in';
+	$mail->Password = 'Hr@2024#';                         // SMTP password
+	$mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
+	$mail->Timeout = 8;                                   // seconds - default is 300, which froze the save
+	$mail->SMTPOptions = [
+		'ssl' => [
+			'verify_peer' => false,
+			'verify_peer_name' => false,
+			'allow_self_singed' => true,
+		]
+	];
+	$mail->From = 'hr@quadsel.in';		//Sets the From email address for the message
+	$mail->FromName = 'Recruitment Job Portal';
+	$mail->AddAddress($mailerID, $full_name);		//Adds a "To" address
+	$mail->WordWrap = 50;                                 // Set word wrap to 50 characters
+	$mail->isHTML(true);                                 // Set email format to HTML
 
-                                // Set email format to HTML
-$subject="New Cost Sheet Generated..";			
+	$subject="New Cost Sheet Generated..";
 	$html_table = 'Dear&nbsp;&nbsp;'.$full_name.'<br>
 		&nbsp;&nbsp;	This Mail regarding your Cost sheet generated successfully...';
-	
 	$html_table .=' </table>';
 	$html_table .=' <h4>Thanks & Regards,</h4><br>
 	'.$full_name.'
 	<p>Quadsel Systems Pvt. Ltd.</p>';
 	$mail->Subject =$subject;
 	$mail->Body =$html_table;
-	
 
-if(!$mail->send()) {
-    echo 'Message could not be sent.';
-    echo 'Mailer Error: ' . $mail->ErrorInfo;
-	echo "0";
-} 
-else {
-    echo 'Message has been sent';
-	echo "1";
+	$mail->send();
+} catch (\Throwable $e) {
+	error_log('Cost sheet mail not sent: ' . $e->getMessage());
 }
-     $insert_query2= $con->query("Update enquiry set status='4' where id='$enquiry_idq'");
 
-	 if($insert_query2)
-	 {
-		 
-		 echo 1;
-		 
-	 }
-	 else{
-		 echo 0;
-	 }
-							   							   
-?> 
-    
+if($insert_query2)
+{
+	echo 1;
+}
+else{
+	echo 0;
+}

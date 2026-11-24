@@ -513,36 +513,47 @@ function appendfun()
 	<script>
 		 $(document).ready(function(){  
 		 
-		$("form[name='fupForm']").on("submit", function(ev) {
-		 ev.preventDefault();
-		 
-		 
-		/* var igst_per = document.getElementById("igst_per1").value;
+		var $csForm = $("form[name='fupForm']");
 
+		// If a required field is hidden/off-screen the browser blocks SAVE silently - tell the user which one.
+		$csForm[0].addEventListener('invalid', function(e){
+			var el = e.target;
+			console.warn('Cost sheet - required field not filled:', el.name || el.id, el);
+			if (el.offsetParent === null) {
+				alert('Please fill the required field: ' + (el.name || el.id));
+			}
+		}, true);
 
-//alert(services)
-if(igst_per==""){
-	alert("Please Enter igst Value")
-	return false;
-}*/
-var formData = new FormData(this);
-$('.wage_content').html('<br><div style="text-align: center;"><img src="qvision/images/images/load3.gif"></div>');	  
-           $.ajax({  
-                url: 'qvision/BusinessProcess/quotation/costsheet_insert.php',
-                method:"POST",  
-                data:formData, 
+		$csForm.off("submit.costsheet").on("submit.costsheet", function(ev) {
+			ev.preventDefault();
+
+			if ($csForm.data('saving')) { return false; }   // already saving - ignore double click (button look unchanged)
+
+			var formData = new FormData(this);
+			// Keep the form on screen while saving (do NOT replace the page with a loader),
+			// so nothing is lost if the server returns an error.
+			$csForm.data('saving', true);
+
+			$.ajax({
+				url: 'qvision/BusinessProcess/quotation/costsheet_insert.php',
+				method: "POST",
+				data: formData,
 				cache: false,
 				contentType: false,
 				processData: false,
-                success:function(data)  
-                {  
-					//CS_generated_mail();
-                    alert('Cost Sheet Added Successfully'); 
-                  // $('#fupForm')[0].reset();  
-				  Cost_sheet_revise();
-                }  
-           });  
-      });  
+				timeout: 120000,
+				success: function(data) {
+					alert('Cost Sheet Added Successfully');
+					Cost_sheet_revise();
+				},
+				error: function(xhr, status, err) {
+					$csForm.data('saving', false);
+					var detail = (xhr.responseText || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 400);
+					console.error('Cost sheet save failed', status, xhr.status, xhr.responseText);
+					alert('Cost sheet could not be saved.\nStatus: ' + status + ' (' + xhr.status + ' ' + (err || '') + ')\n' + detail);
+				}
+			});
+		});
 	   }); 
 </script>
 <script>
@@ -1281,4 +1292,3 @@ $("#gst").change(function(e){
 	
 });
 </script>
-

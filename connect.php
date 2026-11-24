@@ -7,7 +7,7 @@ if (!headers_sent()) {
 //define("Title", 'Recruitment');
 try {
 	$con = new pdo ('mysql:host=localhost;dbname=demobluebase_aeronero','root',''); //admin@123
-    $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+    $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $con->query("SET SESSION sql_mode = ''");
 } catch (Exception $e) {
     echo $e->getMessage();

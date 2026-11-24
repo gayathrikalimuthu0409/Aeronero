@@ -1,0 +1,10 @@
+2026-11-24 04:23:25 PHP ERROR: Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY' in C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\costsheet_insert.php:709
+Stack trace:
+#0 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\costsheet_insert.php(709): PDO->query('insert into cos...')
+#1 {main}
+  thrown in costsheet_insert.php on line 709
+2026-11-24 04:26:11 PHP ERROR: Uncaught PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY' in C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\costsheet_insert.php:709
+Stack trace:
+#0 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\costsheet_insert.php(709): PDO->query('insert into cos...')
+#1 {main}
+  thrown in costsheet_insert.php on line 709

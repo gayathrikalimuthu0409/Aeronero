@@ -1,4 +1,13 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if(empty($_SESSION['userid']) || empty($_SESSION['username']) || empty($_POST['pro_id'])) {
+    echo "<script>alert('Session expired or Invalid Data. Please login again.'); window.location.href='../../../index.php';</script>";
+    exit;
+}
+
 require '../../../connect.php';
 require '../../../user.php';
 
@@ -31,7 +40,19 @@ if(isset($_POST['submit']))
     $a_ten=isset($_POST['a_ten10']) ? addslashes($_POST['a_ten10']) : '';
 	$a_over_time=isset($_POST['a_over_time10']) ? addslashes($_POST['a_over_time10']) : '';
 	
-	$date = date('Y-m-d');
+    $p_two=isset($_POST['p_two']) ? addslashes($_POST['p_two']) : '';
+    $p_three=isset($_POST['p_three']) ? addslashes($_POST['p_three']) : '';
+    $p_four=isset($_POST['p_four']) ? addslashes($_POST['p_four']) : '';
+    $p_five=isset($_POST['p_five']) ? addslashes($_POST['p_five']) : '';
+    $p_six=isset($_POST['p_six']) ? addslashes($_POST['p_six']) : '';
+    $p_seven=isset($_POST['p_seven']) ? addslashes($_POST['p_seven']) : '';
+    $p_eight=isset($_POST['p_eight']) ? addslashes($_POST['p_eight']) : '';
+    $p_nine=isset($_POST['p_nine']) ? addslashes($_POST['p_nine']) : '';
+    $p_ten=isset($_POST['p_ten']) ? addslashes($_POST['p_ten']) : '';
+    $p_over_time=isset($_POST['p_over_time']) ? addslashes($_POST['p_over_time']) : '';
+
+	date_default_timezone_set('Asia/Kolkata');
+	$date = isset($_POST['sheet_date']) ? $_POST['sheet_date'] : date('Y-m-d');
 
 	$stmt = $con->prepare("SELECT COUNT(*) as count FROM time_sheet where staff_id='$id' and date='$date'");
 	$stmt->execute(); 
@@ -43,7 +64,7 @@ if(isset($_POST['submit']))
     if($count==0)
     {
         try {
-            $insert_sql=$con->query("insert into time_sheet(staff_id,date,one,two,three,four,five,six,seven,eight,nine,ten,over_time,a_one,a_two,a_three,a_four,a_five,a_six,a_seven,a_eight,a_nine,a_ten,a_over_time,created_on) values('$id','$date','$one','$two','$three','$four','$five','$six','$seven','$eight','$nine','$ten','$over_time','$a_one','$a_two','$a_three','$a_four','$a_five','$a_six','$a_seven','$a_eight','$a_nine','$a_ten','$a_over_time',NOW())");
+            $insert_sql=$con->query("insert into time_sheet(staff_id,date,one,two,three,four,five,six,seven,eight,nine,ten,over_time,a_one,a_two,a_three,a_four,a_five,a_six,a_seven,a_eight,a_nine,a_ten,a_over_time,p_two,p_three,p_four,p_five,p_six,p_seven,p_eight,p_nine,p_ten,p_over_time,created_on) values('$id','$date','$one','$two','$three','$four','$five','$six','$seven','$eight','$nine','$ten','$over_time','$a_one','$a_two','$a_three','$a_four','$a_five','$a_six','$a_seven','$a_eight','$a_nine','$a_ten','$a_over_time','$p_two','$p_three','$p_four','$p_five','$p_six','$p_seven','$p_eight','$p_nine','$p_ten','$p_over_time',NOW())");
             if ($insert_sql) {
                 $success = true;
             } else {
@@ -56,7 +77,8 @@ if(isset($_POST['submit']))
         }
     }else{
         try {
-            $update_sql=$con->query("update time_sheet set one='$one',two='$two',three='$three',four='$four',five='$five',six='$six',seven='$seven',eight='$eight',nine='$nine',ten='$ten',over_time='$over_time',a_one='$a_one',a_two='$a_two',a_three='$a_three',a_four='$a_four',a_five='$a_five',a_six='$a_six',a_seven='$a_seven',a_eight='$a_eight',a_nine='$a_nine',a_ten='$a_ten',a_over_time='$a_over_time',modified_on=NOW() where staff_id='$id' and date='$date'");
+            $update_sql=$con->query("update time_sheet set one='$one',two='$two',three='$three',four='$four',five='$five',six='$six',seven='$seven',eight='$eight',nine='$nine',ten='$ten',over_time='$over_time',a_one='$a_one',a_two='$a_two',a_three='$a_three',a_four='$a_four',a_five='$a_five',a_six='$a_six',a_seven='$a_seven',a_eight='$a_eight',a_nine='$a_nine',a_ten='$a_ten',a_over_time='$a_over_time',p_two='$p_two',p_three='$p_three',p_four='$p_four',p_five='$p_five',p_six='$p_six',p_seven='$p_seven',p_eight='$p_eight',p_nine='$p_nine',p_ten='$p_ten',p_over_time='$p_over_time',modified_on=NOW() where staff_id='$id' and date='$date'");
+
             if ($update_sql) {
                 $success = true;
             } else {

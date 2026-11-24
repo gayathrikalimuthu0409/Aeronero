@@ -187,7 +187,7 @@ body {font-family: Arial, Helvetica, sans-serif;}
 				?>
         <td colspan="5"><input type="text" value="<?php echo $Product_value; ?>" name="Product" class="form-control" id="Product" readonly></td>
         </tr>
-		<tr>
+		<!-- <tr>
 		<td></td>
 		<?php
 		$list=$fet['services'];
@@ -196,10 +196,10 @@ body {font-family: Arial, Helvetica, sans-serif;}
 		 <td colspan="5"><input type="text" value="<?php echo $rowl ['name'] ?? "Solution"; ?>" class="form-control" name="services" id="services" readonly>		
 		</td>
         </tr>
-     
-    <tr>
+      -->
+            <tr>
                 <td>File</td>
-                <td colspan="5"><a href="/KerliERP/CRM/calls/uploads/<?php echo $fet['image']; ?>" download="<?php echo $fet['image']; ?>"><?php echo $fet['image']; ?></a>
+                <td colspan="5"><a href="/Aeronero/qvision/CRM/calls/uploads/<?php echo $fet['image']; ?>" download="<?php echo $fet['image']; ?>"><?php echo $fet['image']; ?></a>
                 </td>
             </tr>
 			<tr>

@@ -20,7 +20,7 @@ $row = $stmt->fetch();
     <table class="table table-bordered">
         <tr>
         <td><center><img src="qvision/images/logo123.jpg" alt="quadsel" style="width:100px;height:50px;"></center></td>
-        <td colspan="5"><center><b>Bluebase Software Services Private Limited</b></center></td>
+        <td colspan="5"><center><b>Aeronero solutions private limited</b></center></td>
         </tr>
          <?php
 					$client_value=$row['Client_type'];
@@ -48,7 +48,7 @@ $row = $stmt->fetch();
         <tr>
 			<td>Date</td>
 			<td colspan="5"><input type="text" class="form-control"  value="<?php echo $row ['date']; ?>" id="date" name="date" readonly></td>
-			</tr>
+		</tr>
         <tr>
 			<td>Company Name</td>
 			<td colspan="5">

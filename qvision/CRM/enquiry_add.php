@@ -6,25 +6,25 @@ require '../../connect.php';
     background-color:#009EE3 !important;
 }
 .card-primary:not(.card-outline)>.card-header, .card-primary:not(.card-outline)>.card-header a {
-    color: #e95a16 !important;
+    color: #009EE3 !important;
 }
 .card-primary:not(.card-outline)>.card-header, .card-primary:not(.card-outline)>.card-header a {
     color: #3c0808 !important;
-    background-color: #ed5d00;
+    background-color: #009EE3;
 }
 .btn-dark {
-    border-color: #ed5d00;
+    border-color: #009EE3;
 }
 .page-item.active .page-link {
-    background-color: #d79475;
-    border-color: #df8459;
+    background-color: #009EE3;
+    border-color: #009EE3;
 }
 .page-link:hover {
     color: #f1cc61;
 }
 .btn-success {
-    background-color: #f76621;
-    border-color: #f76621;
+    background-color: #009EE3;
+    border-color: #009EE3;
 }   
 
 .select2-container--default .select2-selection--single .select2-selection__rendered{
@@ -185,7 +185,7 @@ require '../../connect.php';
 				<tr>
 					<td>Company:</td>
 					<td colspan="5">
-						<input type="text"  id="companys" name="companys" value="Bluebase Software Services Private Limited" class="form-control"  readonly required="true">
+						<input type="text"  id="companys" name="companys" value="Aeronero solutions private limited" class="form-control"  readonly required="true">
 					</td>
 				</tr>			 
 				<tr id="dep1">

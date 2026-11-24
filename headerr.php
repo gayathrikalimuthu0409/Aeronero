@@ -429,7 +429,7 @@ try {
             <div style="width: 36px; height: 36px; border-radius: 50%; background-color: #003a5c; color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 15px;">
                 <?php echo strtoupper(substr(trim($_SESSION['fullname']), 0, 1)); ?>
             </div>
-            <span style="color: #1e293b; font-weight: 600; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+            <span style="color: #ed5d00; font-weight: 600; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
                 <?php 
                     $nameParts = explode(' ', trim($_SESSION['fullname']));
                     echo htmlspecialchars($nameParts[0]); 
@@ -597,15 +597,17 @@ try {
         z-index: 1000;
         box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
-    .nav-item .nav-link.submenu {
-        padding: 12px 20px !important;
+        .nav-item .nav-link.submenu {
+        padding: 12px 16px !important;
         display: block !important;
         cursor: pointer !important;
         font-family: helvetica;
         font-size: 16px !important;
         color: white !important;
         border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+        border-left: 4px solid transparent !important;
         transition: all 0.3s ease !important;
+        box-sizing: border-box !important;
     }
     .nav-item .nav-link.submenu:hover,
     .nav-item .nav-link.submenu.active-submenu {
@@ -688,7 +690,7 @@ try {
         text-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
     }
     .custom-alert-title {
-        font-size: 19px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
+        font-size: 19px; font-weight: 700; color: #ed5d00; margin-bottom: 8px;
     }
     .custom-alert-text {
         font-size: 14px; color: #64748b; margin-bottom: 25px; line-height: 1.5;
@@ -774,9 +776,10 @@ try {
         console.log(menuName, menuid, userrole);
 
         var submenuContainer = document.getElementById("submenuContainer");
-        document.getElementById("menuid").value = menuid;
+        var menuIdInput = document.getElementById("menuid");
+        if (menuIdInput) menuIdInput.value = menuid;
 
-        submenuContainer.innerHTML = "";
+        if (submenuContainer) submenuContainer.innerHTML = "";
 
         $.ajax({
             type: "POST",
@@ -786,8 +789,13 @@ try {
                 userrole: userrole
             },
             success: function(submenus) {
-
-                var submenusArray = JSON.parse(submenus);
+                var submenusArray;
+                try {
+                    submenusArray = typeof submenus === 'object' ? submenus : JSON.parse(submenus);
+                } catch(e) {
+                    console.error("Error parsing submenus JSON:", e, submenus);
+                    submenusArray = [];
+                }
 
                 if (Array.isArray(submenusArray) && submenusArray.length > 0) {
 
@@ -796,7 +804,6 @@ try {
                         var submenuData = submenusArray[i];
                         var submenuName = submenuData.name;
                         var callMethod = submenuData.call_method;
-
 
                         var subMenuItem = document.createElement("li");
                         subMenuItem.className = "nav-item";
@@ -818,15 +825,22 @@ try {
                         });
 
                         subMenuItem.appendChild(link);
-                        submenuContainer.appendChild(subMenuItem);
+                        if (submenuContainer) submenuContainer.appendChild(subMenuItem);
                     }
 
-                    document.getElementById("sidebar").style.display = "block";
-                    document.getElementById("page_loader").style.marginLeft = "240px";
+                    var sidebarEl = document.getElementById("sidebar");
+                    var pageLoaderEl = document.getElementById("page_loader");
+                    if (sidebarEl) sidebarEl.style.display = "block";
+                    if (pageLoaderEl) pageLoaderEl.style.marginLeft = "240px";
                 } else {
-                    document.getElementById("sidebar").style.display = "none";
-                    document.getElementById("page_loader").style.marginLeft = "0px";
+                    var sidebarEl = document.getElementById("sidebar");
+                    var pageLoaderEl = document.getElementById("page_loader");
+                    if (sidebarEl) sidebarEl.style.display = "none";
+                    if (pageLoaderEl) pageLoaderEl.style.marginLeft = "0px";
                 }
+            },
+            error: function(xhr, status, err) {
+                console.error("Failed to load sidebar:", status, err);
             }
         });
     }
@@ -1193,6 +1207,26 @@ try {
         $.ajax({
             type: "POST",
             url: "qvision/Leave_Management/permission/permission_approvel.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function projects_report() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/Recruitment/project_management/projects_report.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function project_status_report() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/Recruitment/project_management/project_status_report.php",
             success: function(data) {
                 $("#main_content").html(data);
             }
@@ -1635,10 +1669,23 @@ try {
         })
     }
 
+        function cert_report() { $.ajax({ type: "POST", url: "qvision/Reports/cert_report/main.php", success: function(data) { $("#main_content").html(data); } }); }
+
     function reports() {
         $.ajax({
             type: "POST",
             url: "qvision/payroll/payroll_reports.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function leads() {
+
+        $.ajax({
+            type: "POST",
+            url: "qvision/CRM/calls/leads_list.php",
             success: function(data) {
                 $("#main_content").html(data);
             }
@@ -2718,7 +2765,162 @@ try {
 
 
 
+    // Distributors (Business Process)
+    function distributors() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/distributors/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+    function distributor() { distributors(); }
+
     // Ticketing System
+    
+    // Collaborations (Business Process)
+    
+    // Conference and Workshops (Business Process)
+    
+    // Certifications (Business Process)
+    
+    // Laboratory Requirement (Business Process)
+    
+    // Laboratory Requirement Approvals (Approval Menu)
+    function lab_req_proc_indent() { $.ajax({ type: "POST", url: "qvision/Approval/lab_req_approval/main.php", data: { stage: 'proc_indent' }, success: function(data) { $("#main_content").html(data); } }); }
+    function lab_req_finance() { $.ajax({ type: "POST", url: "qvision/Approval/lab_req_approval/main.php", data: { stage: 'finance' }, success: function(data) { $("#main_content").html(data); } }); }
+    function lab_req_proc_status() { $.ajax({ type: "POST", url: "qvision/Approval/lab_req_approval/main.php", data: { stage: 'proc_status' }, success: function(data) { $("#main_content").html(data); } }); }
+    function lab_req_qc() { $.ajax({ type: "POST", url: "qvision/Approval/lab_req_approval/main.php", data: { stage: 'qc' }, success: function(data) { $("#main_content").html(data); } }); }
+    function lab_req_received() { $.ajax({ type: "POST", url: "qvision/Approval/lab_req_approval/main.php", data: { stage: 'received' }, success: function(data) { $("#main_content").html(data); } }); }
+
+
+    
+    // Lab Assets (Business Process)
+    function lab_assets_water() { $.ajax({ type: "POST", url: "qvision/BusinessProcess/lab_assets_water/main.php", success: function(data) { $("#main_content").html(data); } }); }
+    function lab_assets_climate() { $.ajax({ type: "POST", url: "qvision/BusinessProcess/lab_assets_climate/main.php", success: function(data) { $("#main_content").html(data); } }); }
+
+
+    function laboratory_requirement() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/laboratory_requirement/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+
+    function certifications() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/certifications/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+
+    function conference_workshops() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/conference_workshops/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+
+    function collaborations() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/collaborations/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+    function ceo_dashboard() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/ceo_dashboard.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+    function projects() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/projects/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+    function csr() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/csr/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        });
+    }
+
+
+
+    function grants()
+    {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/grants/grants_list.php", 
+            success: function (data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function awards()
+    {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/awards/awards_list.php", 
+            success: function (data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function publications()
+    {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/publications/publications_list.php", 
+            success: function (data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+    function patents_and_designs()
+    {
+        $.ajax({
+            type: "POST",
+            url: "qvision/BusinessProcess/patents/patents_list.php", 
+            success: function (data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+
+
     function tickets_raising() {
         $.ajax({
             type: "POST",
@@ -2996,4 +3198,37 @@ function removeResume(cand_form_id) {
         })
     } */
 </script>
+
+<script>
+    function project_master() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/project_management/project_master/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+    function project_assign() {
+        $.ajax({
+            type: "POST",
+            url: "qvision/project_management/project_assign/main.php",
+            success: function(data) {
+                $("#main_content").html(data);
+            }
+        })
+    }
+</script>
 <!-- /.navbar -->
+
+
+
+
+
+
+
+
+
+
+
+
