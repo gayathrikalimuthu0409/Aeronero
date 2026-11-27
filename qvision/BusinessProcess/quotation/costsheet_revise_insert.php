@@ -31,6 +31,67 @@ $qty           = $_REQUEST['qty'] ?? [];
 //$unit          = $_REQUEST['unit'] ?? [];
 $unit_rate     = $_REQUEST['cost'] ?? [];
 $total         = $_REQUEST['price'] ?? [];
+
+// ---- Which rows are NEW? (the page sends one hidden flag + one row id per item row) ----
+$is_new_product = $_POST['is_new_product'] ?? [];
+$cs_row_id      = $_POST['cs_row_id'] ?? [];
+$new_product_found = in_array('1', array_map('strval', (array)$is_new_product), true);
+
+if ($new_product_found) {
+    // new product(s) added -> a new revision is created below (original behaviour); check the new rows first
+    foreach ($is_new_product as $i => $flag) {
+        if ($flag == '1') {
+            $specification = trim($item[$i] ?? '');
+            $quantity = trim($qty[$i] ?? '');
+            $rate = trim($unit_rate[$i] ?? '');
+            if ($specification === '' || !is_numeric($quantity) || $quantity <= 0 || !is_numeric($rate) || $rate < 0) {
+                ob_clean(); echo "Please enter valid details for the new product."; exit;
+            }
+        }
+    }
+} else {
+    // NO new product -> save the changes on the SAME cost sheet (no new revision, no new rows)
+    try {
+        $qchk = $con->prepare("SELECT quote_no FROM quote_generate WHERE cost_sheet_no = ?");
+        $qchk->execute([$costsheetno_old]);
+        $qrow = $qchk->fetch(PDO::FETCH_ASSOC);
+    
+
+        $num = function ($v) { return ($v === '' || $v === null) ? 0 : $v; };
+        $p_log_per = $_REQUEST['log_per'] ?? [];   $p_log_amt = $_REQUEST['log_amt'] ?? [];
+        $p_eng_per = $_REQUEST['eng_per'] ?? [];   $p_eng_amt = $_REQUEST['eng_amt'] ?? [];
+        $p_com_per = $_REQUEST['com_per'] ?? [];   $p_com_amt = $_REQUEST['com_amt'] ?? [];
+        $p_col     = $_REQUEST['col_item'] ?? [];
+        $p_net     = $num($_REQUEST['total_item'] ?? 0);   $p_grand = $num($_REQUEST['grand_total'] ?? 0);
+        $p_gst_per = $num($_REQUEST['gst_per'] ?? 0);      $p_gst_amt = $num($_REQUEST['gst_val'] ?? 0);
+        $p_igst_per= $num($_REQUEST['igst_per'] ?? 0);     $p_igst_amt = $num($_REQUEST['igst_val'] ?? 0);
+        $p_date    = date('Y-m-d', strtotime($_REQUEST['chost_date'] ?? 'now'));
+
+        $upd = $con->prepare("UPDATE cost_sheet_entry SET specification=?, qty=?, unit_rate=?, log_per=?, log_amt=?, eng_per=?, eng_amt=?,
+                              com_per=?, com_amt=?, total_price=?, total_amt=?, net_amt=?, grand_amt=?, gst_per=?, gst_amt=?, igst_per=?,
+                              igst_amount=?, costsheet_date=? WHERE id=? AND cost_sheet_no=? AND status='1'");
+        $kept = [];
+        foreach ($cs_row_id as $i => $rid) {
+            $rid = (int)$rid;
+            if ($rid <= 0) { continue; }
+            $kept[] = $rid;
+            $upd->execute([ $item[$i] ?? '', $num($qty[$i] ?? 0), $num($unit_rate[$i] ?? 0),
+                $num($p_log_per[$i] ?? 0), $num($p_log_amt[$i] ?? 0), $num($p_eng_per[$i] ?? 0), $num($p_eng_amt[$i] ?? 0),
+                $num($p_com_per[$i] ?? 0), $num($p_com_amt[$i] ?? 0), $num($total[$i] ?? 0), $num($p_col[$i] ?? 0),
+                $p_net, $p_grand, $p_gst_per, $p_gst_amt, $p_igst_per, $p_igst_amt, $p_date, $rid, $costsheetno_old ]);
+        }
+        if (count($kept) == 0) {
+            ob_clean(); echo "No cost sheet rows were received from the page, nothing was saved."; exit;
+        }
+        // item rows that were deleted on the page are switched off
+        $con->exec("UPDATE cost_sheet_entry SET status='0' WHERE cost_sheet_no=" . $con->quote($costsheetno_old) .
+                   " AND status='1' AND id NOT IN (" . implode(',', array_map('intval', $kept)) . ")");
+        file_put_contents('debug.txt', "Updated in place: " . $costsheetno_old . "\n", FILE_APPEND);
+        ob_clean(); echo "Updated"; exit;
+    } catch (Throwable $e) {
+        ob_clean(); echo "Could not save: " . $e->getMessage(); exit;
+    }
+}
 //$totalPrice    = $_REQUEST['totalPrice'] ?? [];
 file_put_contents('debug.txt', "Line 25\n", FILE_APPEND);
 $row_count= count($total);

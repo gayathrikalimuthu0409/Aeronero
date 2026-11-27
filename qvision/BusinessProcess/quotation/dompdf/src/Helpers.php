@@ -37,7 +37,7 @@ class Helpers
         return null;
     }
 
-      /**
+    /**
      * builds a full url given a protocol, hostname, base path and url
      *
      * @param string $protocol
@@ -45,20 +45,11 @@ class Helpers
      * @param string $base_path
      * @param string $url
      * @return string
-     *
-     * Initially the trailing slash of $base_path was optional, and conditionally appended.
-     * However on dynamically created sites, where the page is given as url parameter,
-     * the base path might not end with an url.
-     * Therefore do not append a slash, and **require** the $base_url to ending in a slash
-     * when needed.
-     * Vice versa, on using the local file system path of a file, make sure that the slash
-     * is appended (o.k. also for Windows)
      */
     public static function build_url($protocol, $host, $base_path, $url)
     {
         $protocol = mb_strtolower($protocol);
         if (strlen($url) == 0) {
-            //return $protocol . $host . rtrim($base_path, "/\\") . "/";
             return $protocol . $host . $base_path;
         }
 
@@ -70,12 +61,7 @@ class Helpers
         $ret = $protocol;
 
         if (!in_array(mb_strtolower($protocol), array("http://", "https://", "ftp://", "ftps://"))) {
-            //On Windows local file, an abs path can begin also with a '\' or a drive letter and colon
-            //drive: followed by a relative path would be a drive specific default folder.
-            //not known in php app code, treat as abs path
-            //($url[1] !== ':' || ($url[2]!=='\\' && $url[2]!=='/'))
             if ($url[0] !== '/' && (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' || (mb_strlen($url) > 1 && $url[0] !== '\\' && $url[1] !== ':'))) {
-                // For rel path and local acess we ignore the host, and run the path through realpath()
                 $ret .= realpath($base_path) . '/';
             }
             $ret .= $url;
@@ -86,13 +72,11 @@ class Helpers
         // Protocol relative urls (e.g. "//example.org/style.css")
         if (strpos($url, '//') === 0) {
             $ret .= substr($url, 2);
-            //remote urls with backslash in html/css are not really correct, but lets be genereous
         } elseif ($url[0] === '/' || $url[0] === '\\') {
             // Absolute path
             $ret .= $host . $url;
         } else {
             // Relative path
-            //$base_path = $base_path !== "" ? rtrim($base_path, "/\\") . "/" : "";
             $ret .= $host . $base_path . $url;
         }
 
@@ -109,7 +93,6 @@ class Helpers
      */
     public static function dec2roman($num)
     {
-
         static $ones = array("", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix");
         static $tens = array("", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc");
         static $hund = array("", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm");
@@ -183,39 +166,29 @@ class Helpers
     }
 
     /**
-     * Encodes a Uniform Resource Identifier (URI) by replacing non-alphanumeric
-     * characters with a percent (%) sign followed by two hex digits, excepting 
-     * characters in the URI reserved character set.
-     * 
-     * Assumes that the URI is a complete URI, so does not encode reserved 
-     * characters that have special meaning in the URI.
-     *
-     * Simulates the encodeURI function available in JavaScript  
-     * https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/encodeURI
-     * 
-     * Source: http://stackoverflow.com/q/4929584/264628
+     * Simulates the encodeURI function available in JavaScript
      *
      * @param string $uri The URI to encode
      * @return string The original URL with special characters encoded
      */
-    public static function encodeURI($uri) {
+    public static function encodeURI($uri)
+    {
         $unescaped = array(
-            '%2D'=>'-','%5F'=>'_','%2E'=>'.','%21'=>'!', '%7E'=>'~',
-            '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')'
+            '%2D' => '-', '%5F' => '_', '%2E' => '.', '%21' => '!', '%7E' => '~',
+            '%2A' => '*', '%27' => "'", '%28' => '(', '%29' => ')'
         );
         $reserved = array(
-            '%3B'=>';','%2C'=>',','%2F'=>'/','%3F'=>'?','%3A'=>':',
-            '%40'=>'@','%26'=>'&','%3D'=>'=','%2B'=>'+','%24'=>'$'
+            '%3B' => ';', '%2C' => ',', '%2F' => '/', '%3F' => '?', '%3A' => ':',
+            '%40' => '@', '%26' => '&', '%3D' => '=', '%2B' => '+', '%24' => '$'
         );
         $score = array(
-            '%23'=>'#'
+            '%23' => '#'
         );
-        return strtr(rawurlencode(rawurldecode($uri)), array_merge($reserved,$unescaped,$score));
+        return strtr(rawurlencode(rawurldecode($uri)), array_merge($reserved, $unescaped, $score));
     }
 
     /**
      * Decoder for RLE8 compression in windows bitmaps
-     * http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/bitmaps_6x0u.asp
      *
      * @param string $str Data to decode
      * @param integer $width Image width
@@ -261,7 +234,6 @@ class Helpers
 
     /**
      * Decoder for RLE4 compression in windows bitmaps
-     * see http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/bitmaps_6x0u.asp
      *
      * @param string $str Data to decode
      * @param integer $width Image width
@@ -348,7 +320,7 @@ class Helpers
         $file = "";
 
         $arr = parse_url($url);
-        if ( isset($arr["scheme"]) ) {
+        if (isset($arr["scheme"])) {
             $arr["scheme"] = mb_strtolower($arr["scheme"]);
         }
 
@@ -392,30 +364,23 @@ class Helpers
             if (isset($arr["fragment"])) {
                 $file .= "#" . $arr["fragment"];
             }
-
         } else {
-
             $i = mb_stripos($url, "file://");
             if ($i !== false) {
                 $url = mb_substr($url, $i + 7);
             }
 
-            $protocol = ""; // "file://"; ? why doesn't this work... It's because of
-            // network filenames like //COMPU/SHARENAME
-
-            $host = ""; // localhost, really
+            $protocol = "";
+            $host = "";
             $file = basename($url);
-
             $path = dirname($url);
 
             // Check that the path exists
             if ($path !== false) {
                 $path .= '/';
-
             } else {
                 // generate a url to access the file if no real path found.
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-
                 $host = isset($_SERVER["HTTP_HOST"]) ? $_SERVER["HTTP_HOST"] : php_uname("n");
 
                 if (substr($arr["path"], 0, 1) === '/') {
@@ -426,11 +391,13 @@ class Helpers
             }
         }
 
-        $ret = array($protocol, $host, $path, $file,
+        $ret = array(
+            $protocol, $host, $path, $file,
             "protocol" => $protocol,
             "host" => $host,
             "path" => $path,
-            "file" => $file);
+            "file" => $file
+        );
         return $ret;
     }
 
@@ -453,11 +420,6 @@ class Helpers
 
     /**
      * Stores warnings in an array for display later
-     * This function allows warnings generated by the DomDocument parser
-     * and CSS loader ({@link Stylesheet}) to be captured and displayed
-     * later.  Without this function, errors are displayed immediately and
-     * PDF streaming is impossible.
-     * @see http://www.php.net/manual/en/function.set-error_handler.php
      *
      * @param int $errno
      * @param string $errstr
@@ -468,8 +430,8 @@ class Helpers
      */
     public static function record_warnings($errno, $errstr, $errfile, $errline)
     {
-        // Not a warning or notice
-        if (!($errno & (E_WARNING | E_NOTICE | E_USER_NOTICE | E_USER_WARNING))) {
+        // Not a warning, notice, or deprecation
+        if (!($errno & (E_WARNING | E_NOTICE | E_USER_NOTICE | E_USER_WARNING | E_DEPRECATED | E_USER_DEPRECATED))) {
             throw new Exception($errstr . " $errno");
         }
 
@@ -495,11 +457,11 @@ class Helpers
             return chr(0xC0 | $c >> 6) . chr(0x80 | $c & 0x3F);
         } else if ($c <= 0xFFFF) {
             return chr(0xE0 | $c >> 12) . chr(0x80 | $c >> 6 & 0x3F)
-            . chr(0x80 | $c & 0x3F);
+                . chr(0x80 | $c & 0x3F);
         } else if ($c <= 0x10FFFF) {
             return chr(0xF0 | $c >> 18) . chr(0x80 | $c >> 12 & 0x3F)
-            . chr(0x80 | $c >> 6 & 0x3F)
-            . chr(0x80 | $c & 0x3F);
+                . chr(0x80 | $c >> 6 & 0x3F)
+                . chr(0x80 | $c & 0x3F);
         }
         return false;
     }
@@ -573,8 +535,7 @@ class Helpers
                 $width = (int)$meta['width'];
                 $height = (int)$meta['height'];
                 $type = "bmp";
-            }
-            else {
+            } else {
                 if (strpos($data, "<svg") !== false) {
                     $doc = new \Svg\Document();
                     $doc->loadFile($filename);
@@ -583,7 +544,6 @@ class Helpers
                     $type = "svg";
                 }
             }
-
         }
 
         return $cache[$filename] = array($width, $height, $type);
@@ -591,7 +551,6 @@ class Helpers
 
     /**
      * Credit goes to mgutt
-     * http://www.programmierer-forum.de/function-imagecreatefrombmp-welche-variante-laeuft-t143137.htm
      * Modified by Fabien Menager to support RGB555 BMP format
      */
     public static function imagecreatefrombmp($filename, $context = null)
@@ -638,7 +597,6 @@ class Helpers
         // obtain imagesize
         if ($meta['imagesize'] < 1) {
             $meta['imagesize'] = $meta['filesize'] - $meta['offset'];
-            // in rare cases filesize is equal to offset so we need to read physical size
             if ($meta['imagesize'] < 1) {
                 $meta['imagesize'] = @filesize($filename) - $meta['offset'];
                 if ($meta['imagesize'] < 1) {
@@ -655,7 +613,6 @@ class Helpers
         $palette = array();
         if ($meta['bits'] < 16) {
             $palette = unpack('l' . $meta['colors'], fread($fh, $meta['colors'] * 4));
-            // in rare cases the color value is signed
             if ($palette[1] < 0) {
                 foreach ($palette as $i => $color) {
                     $palette[$i] = $color + 16777216;
@@ -694,14 +651,14 @@ class Helpers
                 switch ($meta['bits']) {
                     case 32:
                     case 24:
-                        if (!($part = substr($data, $p, 3 /*$meta['bytes']*/))) {
+                        if (!($part = substr($data, $p, 3))) {
                             trigger_error($error, E_USER_WARNING);
                             return $im;
                         }
                         $color = unpack('V', $part . $vide);
                         break;
                     case 16:
-                        if (!($part = substr($data, $p, 2 /*$meta['bytes']*/))) {
+                        if (!($part = substr($data, $p, 2))) {
                             trigger_error($error, E_USER_WARNING);
                             return $im;
                         }
@@ -768,10 +725,7 @@ class Helpers
     }
 
     /**
-     * Gets the content of the file at the specified path using one of
-     * the following methods, in preferential order:
-     *  - file_get_contents: if allow_url_fopen is true or the file is local
-     *  - curl: if allow_url_fopen is false and curl is available
+     * Gets the content of the file at the specified path
      *
      * @param string $uri
      * @param resource $context (ignored if curl is used)
@@ -793,19 +747,16 @@ class Helpers
                 $uri = Helpers::encodeURI($uri);
             }
             if (isset($maxlen)) {
-                $result = file_get_contents($uri, null, $context, $offset, $maxlen);
+                $result = file_get_contents($uri, false, $context, $offset, $maxlen);
             } else {
-                $result = file_get_contents($uri, null, $context, $offset);
+                $result = file_get_contents($uri, false, $context, $offset);
             }
-            if (isset($http_response_header))
-            {
+            if (isset($http_response_header)) {
                 $headers = $http_response_header;
             }
-
         } elseif (function_exists("curl_exec")) {
             $curl = curl_init($uri);
 
-            //TODO: use $context to define additional curl options
             curl_setopt($curl, CURLOPT_TIMEOUT, 10);
             curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);

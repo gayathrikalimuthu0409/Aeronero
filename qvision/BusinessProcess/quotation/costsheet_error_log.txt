@@ -8,3 +8,31 @@ Stack trace:
 #0 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\costsheet_insert.php(709): PDO->query('insert into cos...')
 #1 {main}
   thrown in costsheet_insert.php on line 709
+2026-11-25 11:20:24 quotation PDF: Unsupported operand types: string + float @ C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer\Inline.php:153
+#0 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(293): Dompdf\Renderer\Inline->render(Object(Dompdf\FrameDecorator\Inline))
+#1 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(108): Dompdf\Renderer->_render_frame('inline', Object(Dompdf\FrameDecorator\Inline))
+#2 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Inline))
+#3 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableCell))
+#4 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableRow))
+#5 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableRowGroup))
+#6 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Table))
+#7 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Block))
+#8 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\FrameReflower\Page.php(148): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Block))
+#9 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\FrameDecorator\AbstractFrameDecorator.php(893): Dompdf\FrameReflower\Page->reflow(NULL)
+#10 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Dompdf.php(831): Dompdf\FrameDecorator\AbstractFrameDecorator->reflow()
+#11 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\quotation_mail_post.php(673): Dompdf\Dompdf->render()
+#12 {main}
+2026-11-25 11:20:51 quotation PDF: Unsupported operand types: string + float @ C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer\Inline.php:153
+#0 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(293): Dompdf\Renderer\Inline->render(Object(Dompdf\FrameDecorator\Inline))
+#1 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(108): Dompdf\Renderer->_render_frame('inline', Object(Dompdf\FrameDecorator\Inline))
+#2 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Inline))
+#3 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableCell))
+#4 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableRow))
+#5 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\TableRowGroup))
+#6 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Table))
+#7 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Renderer.php(194): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Block))
+#8 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\FrameReflower\Page.php(148): Dompdf\Renderer->render(Object(Dompdf\FrameDecorator\Block))
+#9 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\FrameDecorator\AbstractFrameDecorator.php(893): Dompdf\FrameReflower\Page->reflow(NULL)
+#10 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\dompdf\src\Dompdf.php(831): Dompdf\FrameDecorator\AbstractFrameDecorator->reflow()
+#11 C:\xampp\htdocs\Aeronero\qvision\BusinessProcess\quotation\quotation_mail_post.php(673): Dompdf\Dompdf->render()
+#12 {main}

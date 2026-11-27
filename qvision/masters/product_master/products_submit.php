@@ -7,7 +7,7 @@ $user_id =$_SESSION['userid'];
 
 
  $product_id = $_REQUEST['product_id'];
- $product_name = $_REQUEST['product_name'];
+ $product_name = isset($_REQUEST['product_name']) ? $_REQUEST['product_name'] : '';
  $model_name = $_REQUEST['model_name'];
  $description = $_REQUEST['description'];
  $product_type= $_REQUEST['product_type'];
@@ -24,16 +24,25 @@ $product_value="It Asset";
 	$product_value="";	
 	}
 	
-$insert_sql=$con->query("insert into product_master(product_id,name,model_name,description,hsn_code,gst_code,type,status,created_by,created_on)
+if ($product_name == '') {
+	echo "Please select a Product Name. (The Product Name list is filled from the products_master table - it must have at least one name.)";
+	exit;
+}
+
+$err = '';
+try {
+	$insert_sql=$con->query("insert into product_master(product_id,name,model_name,description,hsn_code,gst_code,type,status,created_by,created_on)
 	values('$product_id','$product_name','$model_name','$description','$hsn_code','$gst_code','$product_value','$status','$user_id',NOW())");
-	
-	/* echo "insert into product_master(product_id,name,description,hsn_code,type,status,created_by,created_on)
-	values('$product_id','$product_name','$description','$hsn_code','$product_value','$status','$user_id',NOW())"; */
-	if($insert_sql)
-	{
-		echo "1";
-		
-	}else{
-	echo "2";
-	}
+	if (!$insert_sql) { $err = implode(' ', (array) $con->errorInfo()); }
+} catch (Throwable $e) {
+	$insert_sql = false;
+	$err = $e->getMessage();
+}
+
+if($insert_sql)
+{
+	echo "1";
+}else{
+	echo "Database error: " . $err;
+}
 ?>

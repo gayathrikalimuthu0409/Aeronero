@@ -202,7 +202,7 @@ $row['emp_name'];
 			<input type="checkbox" name="chk[]">
 		  </td>
 		  <td>
-		     <INPUT type="hidden" id="cost_sheet_no" name="cost_sheet_no" class="form-control" value="<?php echo $cost['cost_sheet_no']; ?>" readonly="readonly">
+		     <INPUT type="hidden" id="cost_sheet_no" name="cost_sheet_no" class="form-control" value="<?php echo $cost['cost_sheet_no']; ?>" readonly="readonly"><input type="hidden" name="cs_row_id[]" value="<?php echo $cost['costsheet_id']; ?>"><input type="hidden" name="is_new_product[]" value="0">
 			<input type="text" id="item<?php echo $cnt; ?>" name="item[]" class="form-control" value="<?php echo $cost['specification']; ?>"></td>
 		  <td>
 			<input type="text" id="qty<?php echo $cnt; ?>" name="qty[]" onchange="totalIt()" class="form-control" value="<?php echo $cost['qty']; ?>"></td>
@@ -530,7 +530,7 @@ function check()
 	//alert(len);
 	
 	
-	$('#new_tab').append('<tr class="row_'+len+'"><td><input type="checkbox" name="chk[]" id="chk_'+len+'" value="'+len+'"></td><td><input type="text"  name="item[]" id="item'+len+'" class="form-control"></td><td><input type="text" id="qty'+len+'" name="qty[]" onchange="totalIt()" class="form-control"></td><td><input type="text" id="cost'+len+'" name="cost[]" onchange="totalIt()" class="form-control"></td><td> <input type="text" id="price'+len+'" name="price[]" onchange="totalIt()" readonly value="0.00" class="form-control"></td><td> <input type="text"  id="log_per'+len+'" name="log_per[]" class="form-control log_per" onchange="totalIt()" placeholder="%"></td><td><input type="text"  id="log_amt'+len+'" name="log_amt[]" class="form-control"  placeholder="0.00" readonly></td><td><INPUT type="text"  id="eng_per'+len+'" name="eng_per[]" class="form-control eng_per"  onchange="totalIt()" placeholder="%"></td><td> <INPUT type="text"  id="eng_amt'+len+'" name="eng_amt[]" class="form-control" placeholder="0.00" readonly></td><td><INPUT type="text" id="com_per'+len+'"  name="com_per[]" class="form-control com_per"  onchange="totalIt()" placeholder="%"></td><td><INPUT type="text" id="com_amt'+len+'"  name="com_amt[]" class="form-control"  placeholder="0.00" readonly></td><td><INPUT type="text" id="col_item'+len+'"  name="col_item[]" class="form-control"  placeholder="0.00" readonly></td><td align="left"><b><select class="form-control" id="vendor_name'+len+'" name="vendor_name[]" style="width:100%;" required><option disabled selected>-- Select vendor --</option><?php $stmt = $con->query("SELECT id,vendor_name FROM doller_vendor_mastor");while ($row = $stmt->fetch()) {?><option value="<?php  echo $row['id'];?>"> <?php echo $row['vendor_name']; ?> </option><?php } ?></select></td><td><INPUT type="file"  id="image'+len+'" name="image[]" class="form-control"></td></tr>'); }
+	$('#new_tab').append('<tr class="new-product-row row_'+len+'"><td><input type="checkbox" name="chk[]" id="chk_'+len+'" value="'+len+'"><input type="hidden" name="is_new_product[]" value="1"><input type="hidden" name="cs_row_id[]" value="0"></td><td><input type="text"  name="item[]" id="item'+len+'" class="form-control"></td><td><input type="text" id="qty'+len+'" name="qty[]" onchange="totalIt()" class="form-control"></td><td><input type="text" id="cost'+len+'" name="cost[]" onchange="totalIt()" class="form-control"></td><td> <input type="text" id="price'+len+'" name="price[]" onchange="totalIt()" readonly value="0.00" class="form-control"></td><td> <input type="text"  id="log_per'+len+'" name="log_per[]" class="form-control log_per" onchange="totalIt()" placeholder="%"></td><td><input type="text"  id="log_amt'+len+'" name="log_amt[]" class="form-control"  placeholder="0.00" readonly></td><td><INPUT type="text"  id="eng_per'+len+'" name="eng_per[]" class="form-control eng_per"  onchange="totalIt()" placeholder="%"></td><td> <INPUT type="text"  id="eng_amt'+len+'" name="eng_amt[]" class="form-control" placeholder="0.00" readonly></td><td><INPUT type="text" id="com_per'+len+'"  name="com_per[]" class="form-control com_per"  onchange="totalIt()" placeholder="%"></td><td><INPUT type="text" id="com_amt'+len+'"  name="com_amt[]" class="form-control"  placeholder="0.00" readonly></td><td><INPUT type="text" id="col_item'+len+'"  name="col_item[]" class="form-control"  placeholder="0.00" readonly></td><td align="left"><b><select class="form-control" id="vendor_name'+len+'" name="vendor_name[]" style="width:100%;" required><option disabled selected>-- Select vendor --</option><?php $stmt = $con->query("SELECT id,vendor_name FROM doller_vendor_mastor");while ($row = $stmt->fetch()) {?><option value="<?php  echo $row['id'];?>"> <?php echo $row['vendor_name']; ?> </option><?php } ?></select></td><td><INPUT type="file"  id="image'+len+'" name="image[]" class="form-control"></td></tr>'); }
 	</script>
 <script>
 var date = new Date();
@@ -576,6 +576,20 @@ function costsheet_insert()
 	if ($saveBtn.data('saving')) { return; }          // already saving - ignore double click
 
 	try {
+		// New products (rows added with the "Add" button) must be complete. Saving without new products is allowed:
+		// the existing cost sheet is then updated in place, without creating a new revision.
+		var validNewProduct = true;
+		$('#new_tab tr.new-product-row').each(function() {
+			var item   = $.trim($(this).find('input[name="item[]"]').val());
+			var qty    = $.trim($(this).find('input[name="qty[]"]').val());
+			var cost   = $.trim($(this).find('input[name="cost[]"]').val());
+			var vendor = $(this).find('select[name="vendor_name[]"]').prop('selectedIndex');
+			if (item === "" || qty === "" || cost === "" || vendor <= 0) { validNewProduct = false; return false; }
+		});
+		if (!validNewProduct) {
+			alert("Please enter Product Specification, Quantity, Unit Rate and Vendor for all new products.");
+			return;
+		}
 		if (!document.getElementById("cost_sheet_no")) {
 			alert("This cost sheet could not be loaded on the page (no item rows were found for it).\nPlease go back, open it again and try Save.");
 			return;
@@ -610,6 +624,9 @@ function costsheet_insert()
 				if (data === "Success") {
 					revisecost_sheet_mail(safe_cost_sheet_no);
 					alert("Cost Sheet Updated Successfully");
+					Cost_sheet_revise();
+				} else if (data === "Updated") {
+					alert("Cost Sheet Saved Successfully");
 					Cost_sheet_revise();
 				} else {
 					console.error('Cost sheet revise - server said:', data);

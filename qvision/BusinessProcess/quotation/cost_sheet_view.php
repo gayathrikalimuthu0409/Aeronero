@@ -1,4 +1,18 @@
 <?php
+/* ===== TEMPORARY DEBUG - remove once the list loads =====
+   If this page crashes, show the reason inside the page instead of an endless loading spinner. */
+ob_start();
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
+register_shutdown_function(function () {
+	$e = error_get_last();
+	if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR])) {
+		if (!headers_sent()) { http_response_code(200); }
+		$msg = 'PHP ERROR: ' . $e['message'] . ' in ' . basename($e['file']) . ' on line ' . $e['line'];
+		@file_put_contents(__DIR__ . '/costsheet_error_log.txt', date('Y-m-d H:i:s') . ' ' . $msg . "\r\n", FILE_APPEND);
+		echo '<div style="padding:15px;color:#b00020;font-size:16px;"><b>Cost Sheet Approve could not load.</b><br>' . htmlspecialchars($msg) . '</div>';
+	}
+});
+/* ===== END TEMPORARY DEBUG ===== */
 require '../../../connect.php';
 require '../../../user.php';
 $candidateid=$_SESSION['candidateid'];
@@ -9,7 +23,7 @@ $userrole = $_SESSION['userrole'];
     </head>
 	<style>
 	.card-primary:not(.card-outline)>.card-header{
-		background-color:#009EE3 !important;
+		background-color: #f1cc61 !important;
 	}
 	</style>
 <div  class="card card-primary">
@@ -65,17 +79,20 @@ $userrole = $_SESSION['userrole'];
 								a.quote_type,
 								a.candid_id,
 								b.org_name,
+								enq.Company_name as enquiry_company,
 								e.emp_name AS employee_name,
 								f.*
 							FROM cost_sheet_entry a
 							LEFT JOIN new_client_master b 
 								ON b.id = a.client_id
+							LEFT JOIN enquiry enq 
+								ON enq.id = a.enquiry_id 
 							LEFT JOIN product_services f 
 								ON f.id = a.business_id
 							LEFT JOIN staff_master e 
 								ON e.candid_id = a.candid_id
-							WHERE a.status='0'
-							GROUP BY a.cost_sheet_no
+							WHERE a.status IN ('0','1') AND a.flag='0'
+							AND a.id IN (SELECT MIN(x.id) FROM cost_sheet_entry x WHERE x.status IN ('0','1') AND x.flag='0' GROUP BY x.cost_sheet_no)
 							ORDER BY a.id DESC
 							");
 			
@@ -92,17 +109,20 @@ $userrole = $_SESSION['userrole'];
 							a.quote_type,
 							a.candid_id AS cs_candid_id,
 							b.org_name,
+							enq.Company_name as enquiry_company,
 							e.emp_name AS employee_name,
 							f.*
 						FROM cost_sheet_entry a
 						LEFT JOIN new_client_master b 
 							ON b.id = a.client_id
+						LEFT JOIN enquiry enq 
+							ON enq.id = a.enquiry_id 
 						LEFT JOIN product_services f 
 							ON f.id = a.business_id
 						LEFT JOIN staff_master e 
 							ON e.candid_id = a.candid_id
-						WHERE a.status='1'
-						GROUP BY a.cost_sheet_no
+						WHERE a.status='1' AND a.flag='0'
+						AND a.id IN (SELECT MIN(x.id) FROM cost_sheet_entry x WHERE x.status='1' AND x.flag='0' GROUP BY x.cost_sheet_no)
 						ORDER BY a.id DESC
 						");
 			
@@ -167,16 +187,25 @@ $userrole = $_SESSION['userrole'];
 		  <td><?php echo $cnt;?>.</td>
 		  <td><?php echo $data['cost_sheet_no']; ?></td>
 		  <td><?php 
-		  if($data['mapping_id'] =='1'){ echo "Product"; 
-		  }elseif($data['mapping_id'] =='2'){ echo "Service";
-		  }elseif($data['mapping_id'] =='3'){ echo "Solution";
+		  if($data['business_id'] =='1'){ echo "Product"; 
+		  }elseif($data['business_id'] =='2'){ echo "Service";
+		  }elseif($data['business_id'] =='3'){ echo "Solution";
+		  }elseif($data['business_id'] =='4'){ echo "Software";
 		  }
 		  ?></td>
 		  <td><?php if($data['quote_type']=='1'){ echo "INR"; }else{ echo "Doller";}?></td>
 		 
-		  <td><?php echo $data['org_name']; ?></td>
+		  <td><?php 
+          if(!empty($data['org_name'])) { 
+              echo $data['org_name']; 
+          } elseif(!empty($data['enquiry_company'])) { 
+              echo $data['enquiry_company']; 
+          } else {
+              echo "-";
+          }
+          ?></td>
 		  <td><?php echo $data['employee_name']; ?></td>
-		  <td><?php if($data['cs_status']==1){ 
+		  <td><?php if($data['cs_status']==0){ echo '<span style="color:green;text-align:center;"><b>Cost Sheet Added & </b></span><span style="color:red;text-align:center;"><b> Waiting for Approval</b></span>'; }else if($data['cs_status']==1){ 
 	               echo '<span style="color:green;text-align:center;"><b>Cost Sheet Generated & </b></span>'; 
 	               echo '<span style="color:red;text-align:center;"><b> Waiting for Approval</b></span>'; 
 				}else if($data['cs_status']==3){ 
@@ -257,3 +286,4 @@ function back_CS()
 
 	}
 </script>
+

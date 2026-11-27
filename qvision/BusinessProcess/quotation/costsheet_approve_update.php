@@ -28,20 +28,28 @@ echo $candidateid; echo '****';
    //$row_query = "SELECT * FROM quote_generate";
   $stmt = $con->prepare ("SELECT * from quote_generate");
  
- echo "sELECT e.client,e.company_name,e.mail,cse.client_id,zum.full_name,zum.user_name FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'";
- $query_select = $con->query("SELECT e.client,e.company_name,e.mail as email,cse.client_id,zum.full_name,zum.user_name as mail FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'");
-/* echo "SELECT e.client,e.company_name,e.mail as email,cse.client_id,zum.full_name,zum.user_name as mail FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'"; */
- /* echo "sELECT e.client,e.company_name,e.mail,cse.client_id,zum.full_name,zum.user_name FROM cost_sheet_entry cse 
-INNER JOIN enquiry e on e.id=cse.enquiry_id INNER JOIN z_user_master zum ON zum.candidate_id=e.created_by where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'"; */
- $stmt->execute();
- $row_val = $stmt->fetch();
- $query = $query_select->fetch();
- $count   = $stmt->rowCount();
- echo "jjjjjj";
- echo $count;
+ $query_select = $con->prepare("
+    SELECT
+        e.it_name AS client,
+        e.Company_name AS company_name,
+        e.mail AS email,
+        cse.client_id,
+        zum.full_name,
+        zum.email_id AS mail
+    FROM cost_sheet_entry cse
+    LEFT JOIN enquiry e ON e.id = cse.enquiry_id
+    LEFT JOIN z_user_master zum ON zum.candidate_id = e.created_by
+    WHERE cse.cost_sheet_no = ?
+    AND e.id = ?
+    LIMIT 1
+");
+
+$query_select->execute([$cost_sheet_no, $enquiry_id]);
+$query = $query_select->fetch(PDO::FETCH_ASSOC);
+
+if (!$query) {
+    die("Unable to find cost sheet or enquiry details.");
+}
  /* 
  
  SELECT qg.cost_sheet_no,e.company_name,e.client,e.mail,zum.full_name,zum.user_name,zum.candidate_id FROM `quote_generate` qg
@@ -207,15 +215,22 @@ if($count == 0)
 
 
  $date = date('Y-m-d');
- $row_count = count($cost_sheet_no);
-	
 
- for($i=0;$i<$row_count;$i++)
-{
-  $quote = $cost_sheet_no[$i];
-  $update_query = $con->query("update cost_sheet_entry set approved_by ='$candidateid', status ='2',modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_no'");  
-// echo "update cost_sheet_entry set approved_by ='$user_id', status = '3',modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_no'";
-}
+// Update cost sheet approval status
+$update_query = $con->prepare("
+    UPDATE cost_sheet_entry
+    SET approved_by = ?,
+        status = '2',
+        modified_by = ?,
+        modified_on = NOW()
+    WHERE cost_sheet_no = ?
+");
+
+$update_query->execute([
+    $candidateid,
+    $candidateid,
+    $cost_sheet_no
+]);
 
 $insert_query2= $con->query("Update enquiry set status='5',approved_by ='$candidateid' where id='$enquiry_id'");
 /* $row_query = "SELECT qg.cost_sheet_no,e.company_name,e.client,e.mail,zum.full_name,zum.user_name,zum.candidate_id FROM `quote_generate` qg

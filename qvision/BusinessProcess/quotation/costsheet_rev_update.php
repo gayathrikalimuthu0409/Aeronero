@@ -1,4 +1,7 @@
 <?php
+ob_start();                                   // old debug echoes are collected here and never shown
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
+ini_set('display_errors', 0);
 require '../../../connect.php'; 
 require '../../../user.php'; 
 require '../../../PHPMailer/PHPMailerAutoload.php';
@@ -26,50 +29,56 @@ echo $user_id;echo '****';
 echo '****';
 echo $candidateid; echo '****'; 
    //$row_query = "SELECT * FROM quote_generate";
-  $stmt = $con->prepare ("SELECT * from quote_generate");
- 
- echo "sELECT e.client,e.company_name,e.mail,cse.client_id,zum.full_name,zum.user_name FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'";
- $query_select = $con->query("SELECT e.client,e.company_name,e.mail as email,cse.client_id,zum.full_name,zum.user_name as mail FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'");
-/* echo "SELECT e.client,e.company_name,e.mail as email,cse.client_id,zum.full_name,zum.user_name as mail FROM cost_sheet_entry cse 
-left JOIN enquiry e on (e.id=cse.enquiry_id) left JOIN z_user_master zum ON (zum.candidate_id=e.created_by) where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'"; */
- /* echo "sELECT e.client,e.company_name,e.mail,cse.client_id,zum.full_name,zum.user_name FROM cost_sheet_entry cse 
-INNER JOIN enquiry e on e.id=cse.enquiry_id INNER JOIN z_user_master zum ON zum.candidate_id=e.created_by where cse.cost_sheet_no='$cost_sheet_no' and e.id='$enquiry_id'"; */
- $stmt->execute();
- $row_val = $stmt->fetch();
- $query = $query_select->fetch();
- $count   = $stmt->rowCount();
- echo "jjjjjj";
- echo $count;
- /* 
- 
- SELECT qg.cost_sheet_no,e.company_name,e.client,e.mail,zum.full_name,zum.user_name,zum.candidate_id FROM `quote_generate` qg
-JOIN enquiry e on qg.created_by = e.created_by
-JOIN z_user_master zum WHERE zum.candidate_id = e.created_by and qg.cost_sheet_no ='$cost_sheet_no'"); */
-  
- 
- /*  $deatsils=$con->query("SELECT qg.cost_sheet_no,e.company_name,e.client,e.mail,zum.user_name,zum.candidate_id FROM `quote_generate` qg
-JOIN enquiry e on qg.created_by = e.created_by
-JOIN z_user_master zum WHERE zum.candidate_id = e.created_by and qg.cost_sheet_no ='$cost_sheet_no'");
+  $stmt = $con->prepare("SELECT * from quote_generate");
+  $stmt->execute();
+  $count = $stmt->rowCount();
 
-	$data=$deatsils->fetch();
-	//$enquiry_id=$data['id'];
-	$client=$data['client'];
-	$full_name=$data['full_name']; echo $full_name;
-	$company_name=$data['company_name']; 
-	$candidateid=$_SESSION['candidateid']; */
-	
-	//$data=$deatsils->fetch();
-	//$enquiry_id=$data['id'];
-	$client=$query['client'];echo $client;echo '**$**';
-	$full_name=$query['full_name']; echo $full_name;echo '**#**';
-	$user_name=$query['mail']; echo $user_name;echo '**%**';
-	$mailerID=$query['mail']; echo $mailerID;
-	$company_name=$query['company_name']; echo $company_name;echo '**@**';
-	$candidateid=$_SESSION['candidateid'];
-	
-	
+// ---------------------------------------------------------------------------------------------
+// RESPONSIBLE PERSON  (the person who must be told that the cost sheet was approved)
+//   1) the enquiry owner  2) else the person who created the cost sheet  3) else the approver
+// The old query used e.client, a column that no longer exists in the enquiry table, so this script
+// crashed here and the approve page stayed on the loading spinner.
+// ---------------------------------------------------------------------------------------------
+$client = ''; $full_name = ''; $user_name = ''; $mailerID = ''; $company_name = ''; $resp_email = '';
+$enq = false; $resp_candidate = '';
+try {
+	$st = $con->prepare("SELECT it_name, Company_name, mail, it_mail1, created_by FROM enquiry WHERE id = ?");
+	$st->execute([$enquiry_id]);
+	$enq = $st->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $enq = false; }
+if ($enq) {
+	$client       = $enq['it_name'];
+	$company_name = $enq['Company_name'];
+	$resp_candidate = $enq['created_by'];
+}
+$find_user = function ($candidate) use ($con) {
+	if ($candidate === '' || $candidate === null) { return false; }
+	try {
+		$q = $con->prepare("SELECT full_name, user_name, email_id FROM z_user_master WHERE candidate_id = ? LIMIT 1");
+		$q->execute([$candidate]);
+		return $q->fetch(PDO::FETCH_ASSOC);
+	} catch (Throwable $e) { return false; }
+};
+$person = $find_user($resp_candidate);
+if (!$person) {
+	try {
+		$q = $con->prepare("SELECT created_by FROM cost_sheet_entry WHERE cost_sheet_no = ? ORDER BY id DESC LIMIT 1");
+		$q->execute([$cost_sheet_no]);
+		$cs = $q->fetch(PDO::FETCH_ASSOC);
+		if ($cs) { $person = $find_user($cs['created_by']); }
+	} catch (Throwable $e) { }
+}
+if (!$person) { $person = $find_user($candidateid); }
+if ($person) {
+	$full_name = $person['full_name'];
+	$user_name = $person['user_name'];
+	$mailerID  = $person['user_name'];
+	$resp_email = filter_var($person['email_id'], FILTER_VALIDATE_EMAIL) ? $person['email_id']
+				: (filter_var($person['user_name'], FILTER_VALIDATE_EMAIL) ? $person['user_name'] : '');
+}
+if ($client === '' || $client === null) { $client = $full_name; }
+$candidateid=$_SESSION['candidateid'];
+
 if($count == 0)
 	
 {   
@@ -213,15 +222,8 @@ if($count == 0)
 
 
  $date = date('Y-m-d');
- $row_count = count($cost_sheet_no);
-	
-
- for($i=0;$i<$row_count;$i++)
-{
-  $quote = $cost_sheet_no[$i];
-  $update_query = $con->query("update cost_sheet_entry set approved_by ='$candidateid', status ='2',modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_no'");  
-// echo "update cost_sheet_entry set approved_by ='$user_id', status = '3',modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_no'";
-}
+ // (the old code used count() on a text value - a fatal error in PHP 8)
+ $update_query = $con->query("update cost_sheet_entry set approved_by ='$candidateid', status ='2',modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_no'");
 
 $insert_query2= $con->query("Update enquiry set status='5',approved_by ='$candidateid' where id='$enquiry_id'");
 /* $row_query = "SELECT qg.cost_sheet_no,e.company_name,e.client,e.mail,zum.full_name,zum.user_name,zum.candidate_id FROM `quote_generate` qg
@@ -264,58 +266,44 @@ JOIN z_user_master zum WHERE zum.candidate_id = e.created_by and qg.cost_sheet_n
  
 
  
-//$date=$_REQUEST['date'];
-$mail = new PHPMailer;
-$mail->SMTPDebug = 2; 
-$mail->Mailer = "smtp";
-$mail->IsSMTP(true); 
-$mail->Port = 587;
-$mail->Host = 'webmail.quadsel.in';        
-$mail->SMTPAuth = true;                              // Enable SMTP authentication
-$mail->Username = 'quote@quadsel.in';
-$mail->Password = 'Q@2023';                           // SMTP password
-$mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
-$mail->SMTPOptions = [
-    'ssl' => [
-        'verify_peer' => false,
-        'verify_peer_name' => false,
-		'allow_self_singed' => true,
-    ]
-];
-$mail->From = 'quote@quadsel.in';
-$mail->FromName = 'Marketing Approved Alert - Cost sheet....';
-$mail->AddAddress($mailerID, $client);
-//$mail->AddAddress("subramanian.r@bluebase.in");		//Adds a "To" address
-//$mail->addAddress("laxmipriya@bluebase.in");     // Add a recipient
-$mail->WordWrap = 50;                                 // Set word wrap to 50 characters
-$mail->isHTML(true);                                 // Set email format to HTML
-$subject="Cost Sheet approved by Head..";			
-	$html_table = 'Dear&nbsp;&nbsp;'.$full_name.',<br> 
-		&nbsp;&nbsp;	This Mail regarding your Cost sheet approved by Marketing Head.';
-		
-	$html_table .=' </table>';
-	$html_table .=' <h4>Thanks & Regards,</h4><br>
-	'.$full_name.'
-	<p>Quadsel Systems Pvt. Ltd.</p>';
-	$mail->Subject =$subject;
-	$mail->Body =$html_table;
-	
-
-if(!$mail->send()) {
-    echo 'Message could not be sent.';
-    echo 'Mailer Error: ' . $mail->ErrorInfo;
-	echo "0";
-} 
-else {
-    echo 'Message has been sent';
-	echo "1";
+// NOTIFY THE RESPONSIBLE PERSON - best effort: a mail problem must never break the approval
+if ($resp_email !== '') {
+	try {
+		$mail = new PHPMailer(true);
+		$mail->SMTPDebug = 0; 
+		$mail->Mailer = "smtp";
+		$mail->IsSMTP(true); 
+		$mail->Port = 587;
+		$mail->Host = 'webmail.quadsel.in';        
+		$mail->SMTPAuth = true;
+		$mail->Username = 'quote@quadsel.in';
+		$mail->Password = 'Q@2023';
+		$mail->SMTPSecure = 'tls';
+		$mail->Timeout = 8;                                   // default 300 s can freeze the page
+		$mail->SMTPOptions = [
+			'ssl' => [
+				'verify_peer' => false,
+				'verify_peer_name' => false,
+				'allow_self_singed' => true,
+			]
+		];
+		$mail->From = 'quote@quadsel.in';
+		$mail->FromName = 'Marketing Approved Alert - Cost sheet....';
+		$mail->AddAddress($resp_email, $full_name);
+		$mail->WordWrap = 50;
+		$mail->isHTML(true);
+		$mail->Subject = "Cost Sheet approved by Head..";
+		$mail->Body = 'Dear&nbsp;&nbsp;'.$full_name.',<br> 
+			&nbsp;&nbsp;	This Mail regarding your Cost sheet approved by Marketing Head.' .
+			' <h4>Thanks & Regards,</h4><br>
+			'.$full_name.'
+			<p>Quadsel Systems Pvt. Ltd.</p>';
+		$mail->send();
+	} catch (Throwable $e) {
+		error_log('Cost sheet approval mail not sent: ' . $e->getMessage());
+	}
 }
 
-?>  
-
-
-
-
-
-
-
+ob_end_clean();
+echo "1";
+?>

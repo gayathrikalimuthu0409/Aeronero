@@ -145,16 +145,23 @@ class Inline extends AbstractRenderer
         // ... && (!($repeat = $style->background_repeat) || $repeat === "repeat" ...
         //different position? $this->_background_image($url, $x, $y, $w, $h, $style);
         if (($url = $style->background_image) && $url !== "none") {
-            $this->_background_image($url, $x + $widths[3], $y + $widths[0], $w, $h, $style);
-        }
+    $this->_background_image(
+        $url,
+        (float)$x + (float)$widths[3],
+        (float)$y + (float)$widths[0],
+        $w,
+        $h,
+        $style
+    );
+}
 
         // Add the border widths
-        $w += (float)$widths[1] + (float)$widths[3];
-        $h += (float)$widths[0] + (float)$widths[2];
+$w = (float)$w + (float)$widths[1] + (float)$widths[3];
+$h = (float)$h + (float)$widths[0] + (float)$widths[2];
 
         // make sure the border and background start inside the left margin
         $left_margin = (float)$style->length_in_pt($style->margin_left);
-        $x += $left_margin;
+        $x = (float)$x + (float)$left_margin;
 
         // If this is the first row, draw the left border too
         if ($first_row && $bp["left"]["style"] !== "none" && $bp["left"]["color"] !== "transparent" && $widths[3] > 0) {

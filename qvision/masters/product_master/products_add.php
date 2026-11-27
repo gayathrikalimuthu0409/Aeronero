@@ -24,7 +24,7 @@ $userrole = $_SESSION['userrole'];
 				<td>Product Name</td>
 				 <td colspan="2">
                     <select required aria-required="true" class="form-control" name="product_name" id="product_name" required>
-                       <option disabled selected>-- Select Product Name--</option>
+                       <option value="" disabled selected>-- Select Product Name--</option>
 						<?php
 								$stmt2 = $con->prepare("SELECT Product_id,Product_name FROM products_master");		
 								$stmt2->execute(); 										
@@ -126,16 +126,15 @@ var description = document.getElementById("description").value;
                             data: data,
                             url: "qvision/masters/product_master/products_submit.php",
                             success: function(result) {
-                                //alert(result)
-                                if (result == '1') {
+                                if (String(result).trim() == '1') {
                                     alert("Product Added Successfully")
-                                    product_master()
+                                    Product_master()
                                 } else {
-                                    event.preventDefault();
-
+                                    alert("Product could not be saved.\n" + String(result).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 500));
                                 }
-
-
+                            },
+                            error: function(xhr, status, err) {
+                                alert("Product could not be saved.\nStatus: " + status + " (" + xhr.status + " " + (err || '') + ")");
                             }
                         });
 

@@ -613,49 +613,60 @@ function back()
 		Cost_sheet_approve()
 
 	}
+
 function approve_costsheet()
 {
-	
-	var data  = $('form').serialize();
-	
-	var las_status    = document.getElementById("las_status").value;
-	
-	var id    = document.getElementById("cost_sheet_no").value;
-	var enquiry_id  = document.getElementById("enquiry_id").value;
-	
-	var costsheet_id  = document.getElementById("costsheet_id").value;
-	//alert(costsheet_id)
-	var old_quote_no  = document.getElementById("old_quote_no").value;
-	var business_id  = document.getElementById("business_id").value;
-	//alert(old_quote_no)
-   $('.wage_content').html('<br><div style="text-align: center;"><img src="qvision/images/images/load3.gif"></div>');
-   
-   if(las_status==1){
-	$.ajax({
-	type:'GET',
-	data:"id="+id+'&costsheet_id='+costsheet_id+'&old_quote_no='+old_quote_no+'&enquiry_id='+enquiry_id+'&business_id='+business_id,
-	url:"qvision/BusinessProcess/quotation/costsheet_rev_update.php",
-	success:function(data)
-	{      
-		alert("****Approved Successfully****");
-		    Cost_sheet_approve();
-				  
-	}       
-	});
-   }else{
-	   $.ajax({
-	type:'GET',
-	data:"id="+id+'&costsheet_id='+costsheet_id+'&old_quote_no='+old_quote_no+'&enquiry_id='+enquiry_id+'&business_id='+business_id,
-	url:"qvision/BusinessProcess/quotation/costsheet_approve_update.php",
-	success:function(data)
-	{      
-		alert("****Approved Successfully****");
-		    Cost_sheet_approve();
-				  
-	}       
-	});
-   }
+    var las_status = document.getElementById("las_status").value;
+    var id = document.getElementById("cost_sheet_no").value;
+    var enquiry_id = document.getElementById("enquiry_id").value;
+    var costsheet_id = document.getElementById("costsheet_id").value;
+    var old_quote_no = document.getElementById("old_quote_no").value;
+    var business_id = document.getElementById("business_id").value;
+
+    var approveUrl = (las_status == 1)
+        ? "qvision/BusinessProcess/quotation/costsheet_rev_update.php"
+        : "qvision/BusinessProcess/quotation/costsheet_approve_update.php";
+
+    $('.wage_content').html(
+        '<br><div style="text-align:center;">' +
+        '<img src="qvision/images/images/load3.gif">' +
+        '<p>Approving cost sheet...</p></div>'
+    );
+
+    $.ajax({
+        type: 'GET',
+        url: approveUrl,
+        data: {
+            id: id,
+            costsheet_id: costsheet_id,
+            old_quote_no: old_quote_no,
+            enquiry_id: enquiry_id,
+            business_id: business_id
+        },
+        timeout: 30000,
+
+        success: function(response) {
+            console.log("Approval response:", response);
+            alert("Approval request completed. Please check the server response.");
+            Cost_sheet_approve();
+        },
+
+        error: function(xhr, status, error) {
+            console.error("Approval AJAX error:", status, error);
+            console.error("Server response:", xhr.responseText);
+
+            alert(
+                "Approval failed!\n" +
+                "Status: " + status + "\n" +
+                "Error: " + error + "\n" +
+                "Server response: " + xhr.responseText
+            );
+
+            Cost_sheet_approve();
+        }
+    });
 }
+
 function revise_costsheet()
 {
 //alert()

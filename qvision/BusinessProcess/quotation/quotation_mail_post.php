@@ -29,14 +29,19 @@ $stmtf->execute();
 $rowf        = $stmtf->fetch();
 
 $cost_sheet_nos=$rowf['cost_sheet_no'];
- echo "SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
-				 inner join new_client_master b on(b.id=a.client_id) 
-				 inner join staff_master e ON e.candid_id=a.candid_id
-				 where a.status ='2' and a.cost_sheet_no='$cost_sheet_nos' order by a.id desc";
-		 
-$stmtb= $con->query("SELECT a.id,a.first_name as fnames,a.phone as pphone,a.mail as mmail,a.position,b.id as cc_id,b.enquiry_id,b.extra_file as exxtra_file,c.id,c.created_by as enquiry_created,e.org_name as oorg_name,n.contact_person as ccontact_person from cost_sheet_entry b left join enquiry c on (b.enquiry_id=c.id) left join candidate_form_details a on (b.created_by=a.id) left join new_client_master e on (b.enquiry_id=e.enquiry_id) left join new_plant_master n on (e.id=n.client_id) where b.id='$cc_id'");
-
- echo "SELECT a.id,a.first_name as fnames,a.phone as pphone,a.mail as mmail,a.position,b.id as cc_id,b.enquiry_id,b.extra_file as exxtra_file,c.id,c.created_by as enquiry_created,e.org_name as oorg_name,n.contact_person as ccontact_person from cost_sheet_entry b left join enquiry c on (b.enquiry_id=c.id) left join candidate_form_details a on (b.created_by=a.id) left join new_client_master e on (b.enquiry_id=e.enquiry_id) left join new_plant_master n on (e.id=n.client_id) where b.id='$costsheet_id'"; 
+ 		 
+$stmtb = $con->query("SELECT a.id,a.first_name as fnames,
+a.phone as pphone,a.mail as mmail,a.position,
+b.id as cc_id,b.enquiry_id,b.extra_file as exxtra_file,
+c.id,c.created_by as enquiry_created,
+e.org_name as oorg_name,
+n.contact_person as ccontact_person
+FROM cost_sheet_entry b
+LEFT JOIN enquiry c ON (b.enquiry_id=c.id)
+LEFT JOIN candidate_form_details a ON (b.created_by=a.id)
+LEFT JOIN new_client_master e ON (b.enquiry_id=e.enquiry_id)
+LEFT JOIN new_plant_master n ON (e.id=n.client_id)
+WHERE b.id='$cc_id'");
 
 /* echo "SELECT id,first_name as fnames,phone as pphone,mail as mmail,position from candidate_form_details where id='$enquiey_created'"; */
 		$stmtb->execute(); 
@@ -46,10 +51,10 @@ $stmtb= $con->query("SELECT a.id,a.first_name as fnames,a.phone as pphone,a.mail
 		$mmail = $rowb['mmail'];
 		$position = $rowb['position'];
 		$ccontact_person = $rowb['ccontact_person'];
-		echo $oorg_name = $rowb['oorg_name'];
-		echo $exxtra_file = $rowb['exxtra_file'];
+		$oorg_name = $rowb['oorg_name'];
+		$exxtra_file = $rowb['exxtra_file'];
 		
-$count = sizeof($costsheet_id);
+$count = 1;
 
 
 // Create a function for converting the amount in words
@@ -139,26 +144,15 @@ table, th, td {
 		inner join quote_generate h on(h.cost_sheet_no=a.cost_sheet_no)
 		join Enquiry i on (a.enquiry_id=i.id)
 		where a.id='$costsheet_id'  and a.status ='2' ");
-		echo "SELECT a.id as costsheet_id,a.cost_sheet_no as cst_no,a.*,b.*,e.*,f.*,g.*,h.*,i.employee as acc_manager,b.org_name as cname,p.*,ci.*,s.* from cost_sheet_entry a 
-		 inner join new_client_master b on(b.id=a.client_id) 
-		 inner join new_plant_master p on b.org_name=p.client_org_name
-		 inner join states s on p.state=s.id
-		 inner join cities ci on p.city=ci.id
-		 inner join product_services f on (f.id = a.business_id)
-		inner join staff_master e ON e.candid_id=a.candid_id 
-		inner join z_user_master g ON (g.candidate_id = e.id)
-		inner join quote_generate h on(h.cost_sheet_no=a.cost_sheet_no)
-		join Enquiry i on (a.enquiry_id=i.id)
-		where a.id='$costsheet_id'  and a.status ='2' ";
-
+	
 		
 		$stmt->execute(); 
-		$row        = $stmt->fetch();
+		$row = $stmt->fetch();
 		$imail = $row['imail'];
 		$company_id = $row['company_id'];
 		$cost_sheet_no = $row['cost_sheet_no'];
 		$cost_sheet_no = $row['cost_sheet_no'];
-		echo$cost_sheet_nob=$row['cost_sheet_no'];
+		$cost_sheet_nob=$row['cost_sheet_no'];
 		
 		
 		$quote_date = date('d-m-Y', strtotime($row['quote_date']));
@@ -248,32 +242,31 @@ table, th, td {
                             $second_score=$gst_split;
 							
 						
-						
-						
-		 $query= $con->query("SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
+			$query= $con->query("SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
 				 inner join new_client_master b on(b.id=a.client_id) 
 				 inner join staff_master e ON e.candid_id=a.candid_id
 				 where a.status ='2' and a.cost_sheet_no='$cost_sheet_nob' order by a.id desc"); 
-				 echo "SELECT a.id as costsheet_id,a.*,b.*,e.* from cost_sheet_entry a 
-				 inner join new_client_master b on(b.id=a.client_id) 
-				 inner join staff_master e ON e.candid_id=a.candid_id
-				 where a.status ='2' and a.cost_sheet_no='$cost_sheet_nob' order by a.id desc"; 
-				
-		 $sum_total="";
-		 $cnt=1;
-			 while($quote = $query->fetch(PDO::FETCH_ASSOC)){
-		  
-			            $net_amt    = $quote['net_amt'];
-						$gst_per    = $quote['gst_per'];
-						$gst_amt    = $quote['gst_amt'];
-						$igst_per    = $quote['igst_per'];
-						$igst_amount    = $quote['igst_amount'];
-						$grand_totals= $quote['grand_amt'];
 				 
-					$sum_total = $quote['total_price'];
-					$gst    = $quote['gst_per'];
-					$withgst     = ($net_amt)*($gst/100);
-					$grand_total = round($withgst+$net_amt);
+				
+		 $grand_totals = 0;
+$net_amt = 0;
+$sum_total = "";
+$cnt = 1;
+
+while ($quote = $query->fetch(PDO::FETCH_ASSOC)) {
+
+    $net_amt = $quote['net_amt'];
+    $gst_per = $quote['gst_per'];
+    $gst_amt = $quote['gst_amt'];
+    $igst_per = $quote['igst_per'];
+    $igst_amount = $quote['igst_amount'];
+    $grand_totals = $quote['grand_amt'];
+
+    $sum_total = $quote['total_price'];
+    $gst = $quote['gst_per'];
+
+    $withgst = $net_amt * ($gst / 100);
+    $grand_total = round($withgst + $net_amt);
 					
 					 
 					
@@ -314,7 +307,7 @@ table, th, td {
 					}elseif($gst =='12'){
 					   $cgst_per =  "6%"; 
 					}
-					$totalamt = $quote['total_amt'];echo "<br/>";
+					$totalamt = $quote['total_amt'];
 					 $iteam_rate = $totalamt/$quote['qty'];
 					 
 					 $tax_amount = $SGST_cal + $CGST_cal + $igst_amount;
@@ -374,7 +367,7 @@ table, th, td {
 </div>
 ';
  //terms and condition query
-                $query2=  $con->prepare("select a.*,b.*,c.*,f.position as desg from staff_master a left join designation_master b on 
+                $query2=  $con->prepare("select a.*,b.*,c.*,b.designation_name as desg from staff_master a left join designation_master b on 
 		                  (a.design_id=b.id) left join z_user_master c on (a.id=c.candidate_id) left join candidate_form_details f on (a.candid_id=f.id) where a.id = '$acc_manager'");
 				   /* echo "select a.*,b.*,c.* from staff_master a inner join designation_master b on 
 		                  (b.id = a.design_id) inner join z_user_master c on (c.candidate_id=a.id) where a.id = '$acc_manager'"; */ 
@@ -552,7 +545,7 @@ for($i=0;$i<$count;$i++)
 
 	$quote_query = $con->query("SELECT a.id as costsheet_id,a.cost_sheet_no as cst_no,p.email1 as email_id1,a.enquiry_id as enquir_id,a.*,b.*,e.*,f.*,g.*,h.*,i.employee as acc_manager,h.quote_no as quote_no,g.full_name as full_name,i.mail,i.employee as cc_mail from cost_sheet_entry a inner join new_client_master b on(b.id=a.client_id) inner join new_plant_master p on b.org_name=p.client_org_name inner join product_services f on (f.id = a.business_id) inner join staff_master e ON e.candid_id=a.candid_id inner join z_user_master g ON (g.candidate_id = e.id) inner join quote_generate h on(h.cost_sheet_no=a.cost_sheet_no) join Enquiry i on (a.enquiry_id=i.id)
 		where a.id='$costsheet_id'   ");
-		echo "SELECT a.id as costsheet_id,a.cost_sheet_no as cst_no,p.email1 as email_id1,a.*,b.*,e.*,f.*,g.*,h.*,i.employee as acc_manager,h.quote_no as quote_no,g.full_name as full_name from cost_sheet_entry a inner join new_client_master b on(b.id=a.client_id) inner join new_plant_master p on b.org_name=p.client_org_name inner join product_services f on (f.id = a.business_id) inner join staff_master e ON e.candid_id=a.candid_id inner join z_user_master g ON (g.candidate_id = e.id) inner join quote_generate h on(h.cost_sheet_no=a.cost_sheet_no) join Enquiry i on (a.enquiry_id=i.id)
+		"SELECT a.id as costsheet_id,a.cost_sheet_no as cst_no,p.email1 as email_id1,a.*,b.*,e.*,f.*,g.*,h.*,i.employee as acc_manager,h.quote_no as quote_no,g.full_name as full_name from cost_sheet_entry a inner join new_client_master b on(b.id=a.client_id) inner join new_plant_master p on b.org_name=p.client_org_name inner join product_services f on (f.id = a.business_id) inner join staff_master e ON e.candid_id=a.candid_id inner join z_user_master g ON (g.candidate_id = e.id) inner join quote_generate h on(h.cost_sheet_no=a.cost_sheet_no) join Enquiry i on (a.enquiry_id=i.id)
 		where a.id='$costsheet_id'  and a.status ='2' ";
 		
 /* 	echo "SELECT a.id as costsheet_id,a.*,b.*,e.*,f.*,g.*,h.* from cost_sheet_entry a 
@@ -566,13 +559,14 @@ for($i=0;$i<$count;$i++)
 	$row        = $quote_query->fetch();
 }	 
 	$mailerID = $row['mail']; echo $mailerID;
-	 $sendmail       = $row['email_id1'];echo "<br/>";
-	 $client_name    = $row['org_name'];echo "<br/>";
+	// $sendmail       = $row['email_id1']; echo "<br/>";
+	$sendmail = "suryabluebase@gmail.com";
+	$client_name    = $row['org_name'];echo "<br/>";
     $cost_sheet_no  = $row['cost_sheet_no'];echo "<br/>";
 	 //$cost_sheet_no  = $row['cost_sheet_no'];
-	 $enquiry_id     = $row['enquir_id'];echo "<br/>";
-    $QuoteNo        = $row['quote_no'];echo "<br/>";
-    $emp_name1        = $row['emp_name'];echo "<br/>";
+	 $enquiry_id     = $row['enquir_id'];
+    $QuoteNo        = $row['quote_no'];
+    $emp_name1        = $row['emp_name'];
 	
 
     $cc_mail_id        = $row['cc_mail'];
@@ -581,21 +575,22 @@ for($i=0;$i<$count;$i++)
 		
 	$quote_qrty->execute(); 
 	$vaalu        = $quote_qrty->fetch();
-	echo $cc_mail        =$vaalu['user_name'];
+	$cc_mail        =$vaalu['user_name'];
     //$CHECKMAIL ='umadevidevi284@gmail.com';
     //$cname ='client';
 	$user_id =$_SESSION['userid'];
-	$candidateid=$_SESSION['candidateid'];	
-	$class_quote = new fetch_data();
-	$class_quote->fetch_quote_data($con,$costsheet_id,$client_name,$QuoteNo);  
+	$candidateid=$_SESSION['candidateid'];	  
 
     $sub='Quotation from Quadsel Systems by '.$emp_name1;
 	
 	$file_name = 'Quadsel'.'.pdf';
-	$html_code = '<link rel="stylesheet" href="bootstrap.min.css">';
-	
-	
-	$html_code .=  $class_quote->fetch_quote_data($con,$costsheet_id,$client_name,$QuoteNo);
+$html_code = '<link rel="stylesheet" href="bootstrap.min.css">';
+
+// Create object of fetch_data class
+$class_quote = new fetch_data();
+
+// Generate quotation HTML
+$html_code .= $class_quote->fetch_quote_data($con, $costsheet_id, $client_name, $QuoteNo);
 	//$grabzIt->SaveTo("images/result.jpg");
 	
 	// reference the Dompdf namespace
@@ -612,10 +607,13 @@ for($i=0;$i<$count;$i++)
     // $dompdf->render();
 	
 	$pdf = new Pdf();
-	$pdf->setPaper('A4', 'portrait');
-	$pdf->load_html($html_code);
-	$pdf->render();
-	$file = $pdf->output();
+    $pdf->setPaper('A4', 'portrait');
+ 
+	file_put_contents('quotation_debug.html', $html_code);
+
+    $pdf->load_html($html_code);
+    $pdf->render();  // Error occurs here
+    $file = $pdf->output();
 	
 	//$file = $dompdf->output();
 	
@@ -625,14 +623,14 @@ for($i=0;$i<$count;$i++)
 	
 if($exxtra_file!=''){
 	$mail = new PHPMailer;
-$mail->SMTPDebug = 2; 
+$mail->SMTPDebug = 0; 
 $mail->Mailer = "smtp";
 $mail->IsSMTP(true); 
 $mail->Port = 587;
-$mail->Host = 'webmail.quadsel.in';        
+$mail->Host = 'mail.bluebase.in';        
 $mail->SMTPAuth = true;                              // Enable SMTP authentication
-$mail->Username = 'quote@quadsel.in';
-$mail->Password = 'Q@2023';                           // SMTP password
+$mail->Username = 'surya@bluebase.in';
+$mail->Password = 'Surya@2026#';                           // SMTP password
 $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
 $mail->SMTPOptions = [
     'ssl' => [
@@ -641,7 +639,7 @@ $mail->SMTPOptions = [
 		'allow_self_singed' => true,
     ]
 ];
-$mail->From = 'quote@quadsel.in';		//Sets the From email address for the message
+$mail->From = 'surya@bluebase.in';		//Sets the From email address for the message
 	$mail->FromName = 'Quotation from Quadsel Syatems ';			//Sets the From name of the message
 	$mail->AddAddress( $sendmail, $client_name);		//Adds a "To" address
 	$mail->AddCC($cc_mail);
@@ -670,14 +668,14 @@ $mail->From = 'quote@quadsel.in';		//Sets the From email address for the message
 		&nbsp;&nbsp; <b> $mmail </b> ";	
 	}else{
 $mail = new PHPMailer;
-$mail->SMTPDebug = 2; 
+$mail->SMTPDebug = 0; 
 $mail->Mailer = "smtp";
 $mail->IsSMTP(true); 
 $mail->Port = 587;
-$mail->Host = 'webmail.quadsel.in';        
+$mail->Host = 'mail.bluebase.in';        
 $mail->SMTPAuth = true;                              // Enable SMTP authentication
-$mail->Username = 'quote@quadsel.in';
-$mail->Password = 'Q@2023';                           // SMTP password
+$mail->Username = 'surya@bluebase.in';
+$mail->Password = 'Surya@2026#';                            // SMTP password
 $mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
 $mail->SMTPOptions = [
     'ssl' => [
@@ -686,7 +684,7 @@ $mail->SMTPOptions = [
 		'allow_self_singed' => true,
     ]
 ];
-$mail->From = 'quote@quadsel.in';		//Sets the From email address for the message
+$mail->From = 'surya@bluebase.in';		//Sets the From email address for the message
 	$mail->FromName = 'Quotation from Quadsel Systems';			//Sets the From name of the message
 	$mail->AddAddress( $sendmail, $client_name);		//Adds a "To" address
 	$mail->AddCC($cc_mail);
@@ -713,31 +711,33 @@ $mail->From = 'quote@quadsel.in';		//Sets the From email address for the message
 		&nbsp;&nbsp; <b> $pphone </b> <br> <br> 
 		&nbsp;&nbsp; <b> $mmail </b> ";	
 	}
-	 if($mail->Send())								//Send an Email. Return true on success or false on error
-	{  
-     	echo "Success";
-		$message = '<label class="text-success">Quote Details has been send successfully...</label>';echo $message;
-	    $update_query = $con->query("update ax Summary_entry set flag ='1' , modified_by ='$user_id',modified_on =NOW() WHERE quote_no= '$QuoteNo'");  
-		echo "update quotation_entry set flag ='1' , modified_by ='$user_id',modified_on =NOW() WHERE quote_no= '$QuoteNo'";
-	} elseif(!$mail->send()) {
-       echo 'Message could not be sent.';
-       echo 'Mailer Error: ' . $mail->ErrorInfo;
-	   echo "0";
-   } 
-  
+	 if ($mail->Send()) {
 
-	$update_query = $con->query("update quote_generate set status ='1', modified_by ='$candidateid',modified_on =NOW() WHERE quote_no= '$QuoteNo'");   
-	echo "update quote_generate set status ='1', modified_by ='$candidateid',modified_on =NOW() WHERE quote_no= '$QuoteNo'";   		
-	$update_query1 = $con->query("update cost_sheet_entry set status ='3', modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_nos'");
-   echo "update cost_sheet_entry set status ='3', modified_by ='$candidateid',modified_on =NOW() WHERE cost_sheet_no= '$cost_sheet_nos'";
-		$insert_query2= $con->query("Update enquiry set status='6' where id='$enquiry_id'"); 
-		echo "Update enquiry set status='6' where id='$enquiry_id'"; 
-	unlink($file_name);
+    echo "Success";
 
-	 $class_quote->fetch_quote_data($con,$costsheet_id,$client_name,$QuoteNo);
-	
-     $mail->clearAttachments();
-	
+    $message = '<label class="text-success">Quote Details has been sent successfully...</label>';
+    echo $message;
+
+    // Update quotation status only after successful email
+    $update_query = $con->query("UPDATE quote_generate SET status='1', modified_by='$candidateid', modified_on=NOW() WHERE quote_no='$QuoteNo'");
+
+    $update_query1 = $con->query("UPDATE cost_sheet_entry SET status='3', modified_by='$candidateid', modified_on=NOW() WHERE cost_sheet_no='$cost_sheet_nos'");
+
+    $insert_query2 = $con->query("UPDATE enquiry SET status='6' WHERE id='$enquirys_id'");
+
+} else {
+
+    echo "Message could not be sent.";
+    echo "Mailer Error: " . $mail->ErrorInfo;
+    echo "0";
+
+}
+
+if (file_exists($file_name)) {
+    unlink($file_name);
+}
+
+$mail->clearAttachments();
 ?>
 
 <!--  <b>Mobile No : </b>'. $row['mobile_no'].'<br/> -->
